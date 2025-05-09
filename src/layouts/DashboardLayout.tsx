@@ -2,12 +2,18 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
+import { useTheme } from '../contexts/ThemeContext'; // Import the theme context
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentTheme } = useTheme(); // Get the current theme
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div
+      className={`flex h-screen overflow-hidden ${
+        currentTheme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+      }`}
+    >
       {/* Sidebar */}
       <Sidebar
         sidebarOpen={sidebarOpen}
@@ -23,7 +29,11 @@ const DashboardLayout = () => {
         />
 
         {/* Main content */}
-        <main className="flex-1 bg-gray-50 dark:bg-gray-900 px-4 py-8 sm:px-6 lg:px-8">
+        <main
+          className={`flex-1 px-4 py-8 sm:px-6 lg:px-8 ${
+            currentTheme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+          }`}
+        >
           <Outlet />
         </main>
       </div>

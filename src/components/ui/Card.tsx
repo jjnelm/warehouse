@@ -1,15 +1,21 @@
 import { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/utils';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
 export const Card = ({ children, className, ...props }: CardProps) => {
+  const { currentTheme } = useTheme(); // Get the current theme
+
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white p-6 shadow-card dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100',
+        'rounded-lg border p-6 shadow-card',
+        currentTheme === 'dark'
+          ? 'bg-gray-900 border-gray-700 text-gray-100'
+          : 'bg-white border-gray-200 text-gray-900',
         className
       )}
       {...props}
@@ -39,9 +45,15 @@ interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {
 }
 
 export const CardTitle = ({ children, className, ...props }: CardTitleProps) => {
+  const { currentTheme } = useTheme(); // Get the current theme
+
   return (
     <h3
-      className={cn('text-lg font-medium text-gray-900', className)}
+      className={cn(
+        'text-lg font-medium',
+        currentTheme === 'dark' ? 'text-gray-100' : 'text-gray-900',
+        className
+      )}
       {...props}
     >
       {children}
@@ -58,9 +70,15 @@ export const CardDescription = ({
   className,
   ...props
 }: CardDescriptionProps) => {
+  const { currentTheme } = useTheme(); // Get the current theme
+
   return (
     <p
-      className={cn('text-sm text-gray-500', className)}
+      className={cn(
+        'text-sm',
+        currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500',
+        className
+      )}
       {...props}
     >
       {children}
@@ -85,9 +103,15 @@ interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const CardFooter = ({ children, className, ...props }: CardFooterProps) => {
+  const { currentTheme } = useTheme(); // Get the current theme
+
   return (
     <div
-      className={cn('mt-4 flex items-center pt-4', className)}
+      className={cn(
+        'mt-4 flex items-center pt-4',
+        currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-700',
+        className
+      )}
       {...props}
     >
       {children}

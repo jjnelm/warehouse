@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 interface UpdateStockForm {
   quantity: number;
@@ -29,16 +30,16 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
       adjustment_type: 'add',
     },
   });
+  const { currentTheme } = useTheme(); // Get the current theme
 
   const adjustmentType = watch('adjustment_type');
 
   const onSubmit = async (data: UpdateStockForm) => {
     try {
       setLoading(true);
-      
-      // Convert quantity to number and calculate new quantity
+
       const adjustmentQuantity = Number(data.quantity);
-      const newQuantity = adjustmentType === 'add' 
+      const newQuantity = adjustmentType === 'add'
         ? currentQuantity + adjustmentQuantity
         : currentQuantity - adjustmentQuantity;
 
@@ -47,7 +48,6 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
         return;
       }
 
-      // Simplified update query
       const { data: updateData, error } = await supabase
         .from('inventory')
         .update({ quantity: newQuantity })
@@ -57,19 +57,10 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
 
       if (error) {
         console.error('Update error:', error);
-        if (error.code === '42501') {
-          toast.error('You do not have permission to update inventory');
-        } else {
-          toast.error('Error updating stock: ' + error.message);
-        }
+        toast.error('Error updating stock: ' + error.message);
         return;
       }
 
-      if (!updateData) {
-        toast.error('Failed to update stock - no data returned');
-        return;
-      }
-      
       toast.success('Stock updated successfully');
       if (onSuccess) {
         onSuccess();
@@ -85,7 +76,11 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
   };
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -96,32 +91,56 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
           >
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Update Stock</h1>
+          <h1 className="text-2xl font-bold">
+            Update Stock
+          </h1>
         </div>
       </div>
 
-      <Card>
+      <Card
+        className={`${
+          currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+      >
         <CardHeader>
           <CardTitle>Stock Adjustment</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* Current Stock */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Current Stock
                 </label>
-                <div className="mt-1 text-lg font-medium text-gray-900">
+                <div
+                  className={`mt-1 text-lg font-medium ${
+                    currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}
+                >
                   {currentQuantity}
                 </div>
               </div>
 
+              {/* Adjustment Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Adjustment Type
                 </label>
                 <select
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:outline-none ${
+                    currentTheme === 'dark'
+                      ? 'bg-gray-800 border-gray-600 text-white focus:border-primary-500 focus:ring-primary-500'
+                      : 'bg-white border-gray-300 text-gray-900 focus:border-primary-500 focus:ring-primary-500'
+                  }`}
                   {...register('adjustment_type')}
                 >
                   <option value="add">Add Stock</option>
@@ -129,8 +148,13 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
                 </select>
               </div>
 
+              {/* Quantity */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Quantity
                 </label>
                 <Input
@@ -143,27 +167,37 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
                       value: 1,
                       message: 'Quantity must be greater than 0',
                     },
-                    valueAsNumber: true
+                    valueAsNumber: true,
                   })}
-                  className="mt-1"
+                  className={`mt-1 ${
+                    currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                  }`}
                 />
                 {errors.quantity && (
                   <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
                 )}
               </div>
 
+              {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label
+                  className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Notes
                 </label>
                 <Input
                   type="text"
                   {...register('notes')}
-                  className="mt-1"
+                  className={`mt-1 ${
+                    currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                  }`}
                 />
               </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex justify-end space-x-3">
               <Button
                 type="button"
@@ -186,4 +220,4 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
   );
 };
 
-export default UpdateStock; 
+export default UpdateStock;

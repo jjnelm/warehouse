@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+  import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { supabase } from '../../lib/supabase';
@@ -21,12 +21,39 @@ interface AddProductForm {
 const AddProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
   const { register, handleSubmit, formState: { errors } } = useForm<AddProductForm>();
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories') // Replace 'categories' with your actual table name
+          .select('id, name');
+
+        if (error) {
+          throw error;
+        }
+
+        const formattedCategories = data.map((category: { id: string; name: string }) => ({
+          value: category.id,
+          label: category.name,
+        }));
+
+        setCategories(formattedCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        toast.error('Failed to load categories');
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const onSubmit = async (data: AddProductForm) => {
     try {
       setLoading(true);
-      
+
       const { error } = await supabase
         .from('products')
         .insert([
@@ -50,7 +77,7 @@ const AddProduct = () => {
         }
         return;
       }
-      
+
       toast.success('Product added successfully');
       navigate('/products');
     } catch (error) {
@@ -106,11 +133,7 @@ const AddProduct = () => {
 
               <Select
                 label="Category"
-                options={[
-                  { value: '9e91e1fc-c883-4634-b3a5-1f8b182309ed', label: 'Electronics' },
-                  { value: 'f2c38d31-4a4c-4b84-8d40-4da154bc71e4', label: 'Office Supplies' },
-                  { value: '3a0a8831-3a7f-42f6-bb3c-5e5eb4dbc8f9', label: 'Furniture' },
-                ]}
+                options={categories}
                 error={errors.category_id?.message}
                 {...register('category_id', {
                   required: 'Category is required',

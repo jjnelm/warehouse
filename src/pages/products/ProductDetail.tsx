@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -17,6 +18,7 @@ const ProductDetail = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
     fetchProduct();
@@ -99,7 +101,11 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div
+        className={`flex h-full items-center justify-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <RefreshCw className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     );
@@ -107,9 +113,18 @@ const ProductDetail = () => {
 
   if (!product) {
     return (
-      <div className="text-center">
+      <div
+        className={`text-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <h2 className="text-lg font-medium">Product not found</h2>
-        <Link to="/products" className="text-primary-600 hover:text-primary-700">
+        <Link
+          to="/products"
+          className={`font-medium ${
+            currentTheme === 'dark' ? 'text-primary-400 hover:text-primary-300' : 'text-primary-600 hover:text-primary-500'
+          }`}
+        >
           Back to Products
         </Link>
       </div>
@@ -117,7 +132,11 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -128,7 +147,7 @@ const ProductDetail = () => {
           >
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="text-2xl font-bold">{product.name}</h1>
         </div>
         <div className="flex space-x-3">
           <Button
@@ -161,43 +180,61 @@ const ProductDetail = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
               <div>
-                <dt className="text-sm font-medium text-gray-500">SKU</dt>
-                <dd className="mt-1 text-sm text-gray-900">{product.sku}</dd>
+                <dt className="text-sm font-medium">
+                  SKU
+                </dt>
+                <dd className="mt-1">
+                  {product.sku}
+                </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Category</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Category
+                </dt>
+                <dd className="mt-1">
                   {product.category?.name}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Unit Price</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Unit Price
+                </dt>
+                <dd className="mt-1">
                   {formatCurrency(product.unit_price)}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">
+                <dt className="text-sm font-medium">
                   Minimum Stock
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dd className="mt-1">
                   {product.minimum_stock}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Status</dt>
+                <dt className="text-sm font-medium">
+                  Status
+                </dt>
                 <dd className="mt-1">
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       product.archived
-                        ? 'bg-gray-100 text-gray-800'
+                        ? currentTheme === 'dark'
+                          ? 'bg-gray-700 text-gray-300'
+                          : 'bg-gray-100 text-gray-800'
+                        : currentTheme === 'dark'
+                        ? 'bg-green-700 text-green-300'
                         : 'bg-green-100 text-green-800'
                     }`}
                   >
@@ -206,8 +243,10 @@ const ProductDetail = () => {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Created
+                </dt>
+                <dd className="mt-1">
                   {formatDate(product.created_at)}
                 </dd>
               </div>
@@ -215,12 +254,16 @@ const ProductDetail = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
+            <p>
               {product.description || 'No description available.'}
             </p>
           </CardContent>
@@ -242,9 +285,9 @@ const ProductDetail = () => {
         isOpen={archiveModalOpen}
         onClose={() => setArchiveModalOpen(false)}
         onConfirm={handleArchive}
-        title={product.archived ? "Unarchive Product" : "Archive Product"}
+        title={product.archived ? 'Unarchive Product' : 'Archive Product'}
         description={`Are you sure you want to ${product.archived ? 'unarchive' : 'archive'} ${product.name}?`}
-        confirmText={product.archived ? "Unarchive" : "Archive"}
+        confirmText={product.archived ? 'Unarchive' : 'Archive'}
         cancelText="Cancel"
         variant="primary"
       />

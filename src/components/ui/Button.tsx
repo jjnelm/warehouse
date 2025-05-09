@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from 'react';
 import { cn } from '../../lib/utils';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
@@ -20,6 +21,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     icon,
     ...props 
   }, ref) => {
+    const { currentTheme } = useTheme(); // Get the current theme
+
     const sizeClasses = {
       sm: 'px-3 py-1.5 text-xs',
       md: 'px-4 py-2 text-sm',
@@ -27,11 +30,21 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const variantClasses = {
-      primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-      secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-      outline: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500',
-      ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-500',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      primary: currentTheme === 'dark'
+        ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
+        : 'bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-400',
+      secondary: currentTheme === 'dark'
+        ? 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500'
+        : 'bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-400',
+      outline: currentTheme === 'dark'
+        ? 'bg-gray-800 text-white border border-gray-600 hover:bg-gray-700 focus:ring-gray-500'
+        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500',
+      ghost: currentTheme === 'dark'
+        ? 'bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white focus:ring-gray-500'
+        : 'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-500',
+      danger: currentTheme === 'dark'
+        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+        : 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-400',
     };
 
     return (

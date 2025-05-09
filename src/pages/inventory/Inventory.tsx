@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, RefreshCw, Plus, AlertTriangle, Trash } from 'lucide-react';
+import { Search, RefreshCw, Plus, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Inventory as InventoryType } from '../../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import Modal from '../../components/ui/Modal';
 import {
   Table,
   TableHeader,
@@ -17,15 +16,14 @@ import {
 } from '../../components/ui/Table';
 import { formatDate, getStockLevelColor } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<InventoryType | null>(null);
+  const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
     fetchInventory();
@@ -64,34 +62,6 @@ const Inventory = () => {
     }
   };
 
-  const handleDeleteClick = (item: InventoryType) => {
-    setItemToDelete(item);
-    setDeleteModalOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!itemToDelete) return;
-
-    try {
-      setDeletingId(itemToDelete.id);
-      const { error } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('id', itemToDelete.id);
-
-      if (error) throw error;
-
-      toast.success('Inventory item deleted successfully');
-      setInventory(inventory.filter(item => item.id !== itemToDelete.id));
-    } catch (error) {
-      console.error('Error deleting inventory:', error);
-      toast.error('Failed to delete inventory item');
-    } finally {
-      setDeletingId(null);
-      setItemToDelete(null);
-    }
-  };
-
   const filteredInventory = inventory.filter((item) => {
     const matchesSearch = 
       item.products?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,12 +77,22 @@ const Inventory = () => {
   ).length;
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+          <h1 className="text-2xl font-bold">
+            Inventory
+          </h1>
           {lowStockCount > 0 && (
-            <div className="mt-2 flex items-center text-sm text-yellow-600">
+            <div
+              className={`mt-2 flex items-center text-sm ${
+                currentTheme === 'dark' ? 'text-yellow-300' : 'text-yellow-600'
+              }`}
+            >
               <AlertTriangle className="mr-1 h-4 w-4" />
               <span>{lowStockCount} item{lowStockCount !== 1 ? 's' : ''} below minimum stock</span>
             </div>
@@ -144,7 +124,11 @@ const Inventory = () => {
         </div>
       </div>
 
-      <Card>
+      <Card
+        className={`${
+          currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+      >
         <CardHeader>
           <CardTitle>Current Stock</CardTitle>
         </CardHeader>
@@ -152,13 +136,19 @@ const Inventory = () => {
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex w-full max-w-md items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search
+                  className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
+                    currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                  }`}
+                />
                 <Input
                   type="search"
                   placeholder="Search inventory..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className={`pl-9 ${
+                    currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                  }`}
                 />
               </div>
             </div>
@@ -180,25 +170,53 @@ const Inventory = () => {
                     <TableHead>Quantity</TableHead>
                     <TableHead>Min Stock</TableHead>
                     <TableHead>Last Updated</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredInventory.map((item) => {
                     const isLowStock = item.quantity <= (item.products?.minimum_stock || 0);
                     return (
-                      <TableRow key={item.id} className={isLowStock ? 'bg-yellow-50' : ''}>
+                      <TableRow
+                        key={item.id}
+                        className={`${
+                          isLowStock
+                            ? currentTheme === 'dark'
+                              ? 'bg-yellow-900/20'
+                              : 'bg-yellow-50'
+                            : ''
+                        }`}
+                      >
                         <TableCell>
                           <Link
                             to={`/inventory/${item.id}`}
-                            className="font-medium text-primary-600 hover:text-primary-700"
+                            className={`font-medium ${
+                              currentTheme === 'dark'
+                                ? 'text-primary-400 hover:text-primary-300'
+                                : 'text-primary-600 hover:text-primary-500'
+                            }`}
                           >
                             {item.products?.name}
                           </Link>
                         </TableCell>
-                        <TableCell>{item.products?.sku}</TableCell>
-                        <TableCell>{item.products?.categories?.name}</TableCell>
-                        <TableCell>
+                        <TableCell
+                          className={`${
+                            currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}
+                        >
+                          {item.products?.sku}
+                        </TableCell>
+                        <TableCell
+                          className={`${
+                            currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}
+                        >
+                          {item.products?.categories?.name}
+                        </TableCell>
+                        <TableCell
+                          className={`${
+                            currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}
+                        >
                           {item.warehouse_locations &&
                             `${item.warehouse_locations.zone}-${item.warehouse_locations.aisle}-${item.warehouse_locations.rack}-${item.warehouse_locations.bin}`}
                         </TableCell>
@@ -213,29 +231,39 @@ const Inventory = () => {
                               {item.quantity}
                             </span>
                             {isLowStock && (
-                              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                              <AlertTriangle
+                                className={`h-4 w-4 ${
+                                  currentTheme === 'dark' ? 'text-yellow-300' : 'text-yellow-500'
+                                }`}
+                              />
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{item.products?.minimum_stock || 0}</TableCell>
-                        <TableCell>{formatDate(item.created_at)}</TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            icon={<Trash className="h-4 w-4" />}
-                            onClick={() => handleDeleteClick(item)}
-                            disabled={deletingId === item.id}
-                          >
-                            {deletingId === item.id ? 'Deleting...' : 'Delete'}
-                          </Button>
+                        <TableCell
+                          className={`${
+                            currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                          }`}
+                        >
+                          {item.products?.minimum_stock || 0}
+                        </TableCell>
+                        <TableCell
+                          className={`${
+                            currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                          }`}
+                        >
+                          {formatDate(item.created_at)}
                         </TableCell>
                       </TableRow>
                     );
                   })}
                   {filteredInventory.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center">
+                      <TableCell
+                        colSpan={7}
+                        className={`py-4 text-center ${
+                          currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
+                      >
                         No inventory items found
                       </TableCell>
                     </TableRow>
@@ -246,20 +274,6 @@ const Inventory = () => {
           )}
         </CardContent>
       </Card>
-
-      <Modal
-        isOpen={deleteModalOpen}
-        onClose={() => {
-          setDeleteModalOpen(false);
-          setItemToDelete(null);
-        }}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Inventory Item"
-        description={`Are you sure you want to delete ${itemToDelete?.products?.name} from inventory? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
 };

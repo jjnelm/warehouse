@@ -9,6 +9,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [trackingNote, setTrackingNote] = useState('');
+  const { currentTheme } = useTheme();
 
   useEffect(() => {
     fetchOrder();
@@ -108,7 +110,11 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div
+        className={`flex h-full items-center justify-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <Package2 className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     );
@@ -116,7 +122,11 @@ export default function OrderDetail() {
 
   if (!order) {
     return (
-      <div className="text-center">
+      <div
+        className={`text-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <h2 className="text-lg font-medium">Order not found</h2>
         <Button onClick={() => navigate('/orders')} className="mt-4">
           Back to Orders
@@ -126,20 +136,28 @@ export default function OrderDetail() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div
+      className={`container mx-auto px-4 py-8 ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" onClick={() => navigate('/orders')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Order {order.order_number}</h1>
+          <h1 className="text-2xl font-bold">Order {order.order_number}</h1>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Order Details */}
-        <Card>
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Order Details</CardTitle>
           </CardHeader>
@@ -201,7 +219,11 @@ export default function OrderDetail() {
         </Card>
 
         {/* Shipping Information */}
-        <Card>
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Shipping Information</CardTitle>
           </CardHeader>
@@ -264,7 +286,11 @@ export default function OrderDetail() {
         </Card>
 
         {/* Order Items */}
-        <Card className="md:col-span-2">
+        <Card
+          className={`md:col-span-2 ${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Order Items</CardTitle>
           </CardHeader>
@@ -328,7 +354,11 @@ export default function OrderDetail() {
 
         {/* Tracking History */}
         {order.tracking_history && order.tracking_history.length > 0 && (
-          <Card className="md:col-span-2">
+          <Card
+            className={`md:col-span-2 ${
+              currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            }`}
+          >
             <CardHeader>
               <CardTitle>Tracking History</CardTitle>
             </CardHeader>

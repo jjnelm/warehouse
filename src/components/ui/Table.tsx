@@ -74,17 +74,17 @@ const TableFooter = ({ children, className, ...props }: TableFooterProps) => {
   const { currentTheme } = useTheme();
   return (
     <tfoot
-  className={cn(
-    'border-t font-medium',
-    currentTheme === 'dark'
-      ? 'bg-gray-900 border-gray-700 text-gray-200'
-      : 'bg-gray-50 border-gray-200 text-gray-700',
-    className
-  )}
-  {...props}
->
-  {children}
-</tfoot>
+      className={cn(
+        'border-t font-medium',
+        currentTheme === 'dark'
+          ? 'bg-gray-900 border-gray-700 text-white'
+          : 'bg-gray-50 border-gray-200 text-gray-700',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </tfoot>
   );
 };
 
@@ -120,7 +120,7 @@ const TableHead = ({ children, className, ...props }: TableHeadProps) => {
     <th
       className={cn(
         'h-12 px-4 text-left align-middle font-medium',
-        currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-500',
+        currentTheme === 'dark' ? 'text-white' : 'text-gray-500',
         className
       )}
       {...props}
@@ -140,7 +140,7 @@ const TableCell = ({ children, className, ...props }: TableCellProps) => {
     <td
       className={cn(
         'px-4 py-3 align-middle',
-        currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-900',
+        currentTheme === 'dark' ? 'text-white' : 'text-gray-900',
         className
       )}
       {...props}

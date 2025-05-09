@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -23,6 +24,7 @@ const EditProduct = () => {
     unit_price: '',
     minimum_stock: '',
   });
+  const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
     fetchProduct();
@@ -74,7 +76,7 @@ const EditProduct = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       const { error } = await supabase
@@ -106,7 +108,7 @@ const EditProduct = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-    
+
     // Handle number inputs
     if (type === 'number') {
       const numValue = value === '' ? '' : Number(value);
@@ -118,14 +120,28 @@ const EditProduct = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+      <div
+        className={`flex h-full items-center justify-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
+        <div
+          className={`h-8 w-8 animate-spin rounded-full border-4 ${
+            currentTheme === 'dark'
+              ? 'border-primary-600 border-t-transparent'
+              : 'border-primary-500 border-t-transparent'
+          }`}
+        />
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -136,20 +152,29 @@ const EditProduct = () => {
           >
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
+          <h1 className="text-2xl font-bold">Edit Product</h1>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
+          <Card
+            className={`${
+              currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            }`}
+          >
             <CardHeader>
               <CardTitle>Product Details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="name"
+                    className={`block text-sm font-medium ${
+                      currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
                     Product Name
                   </label>
                   <Input
@@ -158,12 +183,19 @@ const EditProduct = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="sku" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="sku"
+                    className={`block text-sm font-medium ${
+                      currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
                     SKU
                   </label>
                   <Input
@@ -172,12 +204,19 @@ const EditProduct = () => {
                     value={formData.sku}
                     onChange={handleChange}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="category_id"
+                    className={`block text-sm font-medium ${
+                      currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
                     Category
                   </label>
                   <Select
@@ -186,23 +225,23 @@ const EditProduct = () => {
                     value={formData.category_id}
                     onChange={handleChange}
                     required
-                    className="mt-1"
-                    options={categories.map(category => ({
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
+                    options={categories.map((category) => ({
                       value: category.id,
-                      label: category.name
+                      label: category.name,
                     }))}
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </div>
 
                 <div>
-                  <label htmlFor="unit_price" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="unit_price"
+                    className={`block text-sm font-medium ${
+                      currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
                     Unit Price
                   </label>
                   <Input
@@ -214,12 +253,19 @@ const EditProduct = () => {
                     value={formData.unit_price}
                     onChange={handleChange}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="minimum_stock" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="minimum_stock"
+                    className={`block text-sm font-medium ${
+                      currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
+                  >
                     Minimum Stock
                   </label>
                   <Input
@@ -230,20 +276,31 @@ const EditProduct = () => {
                     value={formData.minimum_stock}
                     onChange={handleChange}
                     required
-                    className="mt-1"
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            className={`${
+              currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            }`}
+          >
             <CardHeader>
               <CardTitle>Description</CardTitle>
             </CardHeader>
             <CardContent>
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="description"
+                  className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
                   Product Description
                 </label>
                 <textarea
@@ -252,7 +309,11 @@ const EditProduct = () => {
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  className={`mt-1 block w-full rounded-md shadow-sm focus:outline-none ${
+                    currentTheme === 'dark'
+                      ? 'bg-gray-800 text-white border-gray-600 focus:border-primary-500 focus:ring-primary-500'
+                      : 'bg-white text-gray-900 border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                  }`}
                 />
               </div>
             </CardContent>
@@ -273,4 +334,4 @@ const EditProduct = () => {
   );
 };
 
-export default EditProduct; 
+export default EditProduct;

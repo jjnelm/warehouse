@@ -27,6 +27,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+import { useTheme } from '../contexts/ThemeContext'; // Import the theme context
 
 // Register ChartJS components
 ChartJS.register(
@@ -45,6 +46,8 @@ const Dashboard = () => {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [orderStatusCounts, setOrderStatusCounts] = useState<number[]>([0, 0, 0, 0]); // Pending, Processing, Completed, Cancelled
+  const { currentTheme } = useTheme(); // Get the current theme
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -199,8 +202,27 @@ const Dashboard = () => {
     }
   };
 
+  const fetchOrderStatusCounts = async () => {
+    try {
+      const statuses = ['pending', 'processing', 'completed', 'cancelled'];
+      const statusCounts = await Promise.all(
+        statuses.map(async (status) => {
+          const { count } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', status);
+          return count || 0;
+        })
+      );
+      setOrderStatusCounts(statusCounts);
+    } catch (error) {
+      console.error('Error fetching order status counts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    fetchOrderStatusCounts();
   }, [refreshKey]);
 
   const handleRefresh = () => {
@@ -232,7 +254,7 @@ const Dashboard = () => {
     datasets: [
       {
         label: 'Orders by Status',
-        data: [15, 8, 22, 3], // Example data, should be replaced with real data
+        data: orderStatusCounts,
         backgroundColor: [
           'rgba(245, 158, 11, 0.7)', // pending (amber)
           'rgba(37, 99, 235, 0.7)', // processing (blue)
@@ -252,19 +274,27 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div
+        className={`flex h-full items-center justify-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <div className="flex flex-col items-center">
           <RefreshCw className="h-10 w-10 animate-spin text-primary-600" />
-          <p className="mt-4 text-lg text-gray-600">Loading dashboard data...</p>
+          <p className="mt-4 text-lg">Loading dashboard data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
         <div className="mt-4 flex space-x-3 sm:mt-0">
           <Button
             size="sm"
@@ -290,8 +320,10 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Products</p>
-                <h3 className="mt-1 text-3xl font-semibold text-gray-900">
+                <p className={`text-sm font-medium ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Total Products
+                </p>
+                <h3 className="mt-1 text-3xl font-semibold">
                   {metrics?.total_products}
                 </h3>
               </div>
@@ -313,8 +345,10 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Low Stock Items</p>
-                <h3 className="mt-1 text-3xl font-semibold text-gray-900">
+                <p className={`text-sm font-medium ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Low Stock Items
+                </p>
+                <h3 className="mt-1 text-3xl font-semibold">
                   {metrics?.low_stock_items}
                 </h3>
               </div>
@@ -336,8 +370,10 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pending Orders</p>
-                <h3 className="mt-1 text-3xl font-semibold text-gray-900">
+                <p className={`text-sm font-medium ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Pending Orders
+                </p>
+                <h3 className="mt-1 text-3xl font-semibold">
                   {metrics?.pending_orders}
                 </h3>
               </div>
@@ -359,8 +395,10 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Inventory Value</p>
-                <h3 className="mt-1 text-3xl font-semibold text-gray-900">
+                <p className={`text-sm font-medium ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Inventory Value
+                </p>
+                <h3 className="mt-1 text-3xl font-semibold">
                   {formatCurrency(metrics?.inventory_value || 0)}
                 </h3>
               </div>
@@ -448,47 +486,85 @@ const Dashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-sm font-medium text-gray-500">
+                  <tr
+                    className={`border-b text-left text-sm font-medium ${
+                      currentTheme === 'dark' ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-500'
+                    }`}
+                  >
                     <th className="pb-3 pl-4 pr-3">Order #</th>
                     <th className="px-3 pb-3">Type</th>
                     <th className="px-3 pb-3">Status</th>
                     <th className="px-3 pb-3">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody
+                  className={`divide-y ${
+                    currentTheme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+                  }`}
+                >
                   {recentOrders.map((order) => (
                     <tr key={order.id} className="text-sm">
-                      <td className="whitespace-nowrap py-3 pl-4 pr-3 font-medium text-gray-900">
-                        <Link to={`/orders/${order.id}`} className="hover:text-primary-600">
+                      <td
+                        className={`whitespace-nowrap py-3 pl-4 pr-3 font-medium ${
+                          currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}
+                      >
+                        <Link
+                          to={`/orders/${order.id}`}
+                          className={`hover:${
+                            currentTheme === 'dark' ? 'text-primary-400' : 'text-primary-600'
+                          }`}
+                        >
                           {order.order_number}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 capitalize">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 capitalize ${
+                          currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}
+                      >
                         {order.order_type}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             order.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-800'
+                              ? currentTheme === 'dark'
+                                ? 'bg-yellow-900 text-yellow-300'
+                                : 'bg-yellow-100 text-yellow-800'
                               : order.status === 'processing'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? currentTheme === 'dark'
+                                ? 'bg-blue-900 text-blue-300'
+                                : 'bg-blue-100 text-blue-800'
                               : order.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
+                              ? currentTheme === 'dark'
+                                ? 'bg-green-900 text-green-300'
+                                : 'bg-green-100 text-green-800'
+                              : currentTheme === 'dark'
+                              ? 'bg-red-900 text-red-300'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
                           {order.status}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-gray-500">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 ${
+                          currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
+                      >
                         {formatDate(order.created_at)}
                       </td>
                     </tr>
                   ))}
                   {recentOrders.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                      <td
+                        colSpan={4}
+                        className={`py-4 text-center ${
+                          currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
+                      >
                         No recent orders found
                       </td>
                     </tr>
@@ -516,29 +592,58 @@ const Dashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-sm font-medium text-gray-500">
+                  <tr
+                    className={`border-b text-left text-sm font-medium ${
+                      currentTheme === 'dark' ? 'border-gray-700 text-gray-400' : 'border-gray-200 text-gray-500'
+                    }`}
+                  >
                     <th className="pb-3 pl-4 pr-3">Product</th>
                     <th className="px-3 pb-3">SKU</th>
                     <th className="px-3 pb-3">Category</th>
                     <th className="px-3 pb-3">Stock Level</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody
+                  className={`divide-y ${
+                    currentTheme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'
+                  }`}
+                >
                   {lowStockProducts.map((product) => (
                     <tr key={product.id} className="text-sm">
-                      <td className="whitespace-nowrap py-3 pl-4 pr-3 font-medium text-gray-900">
-                        <Link to={`/products/${product.id}`} className="hover:text-primary-600">
+                      <td
+                        className={`whitespace-nowrap py-3 pl-4 pr-3 font-medium ${
+                          currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}
+                      >
+                        <Link
+                          to={`/products/${product.id}`}
+                          className={`hover:${
+                            currentTheme === 'dark' ? 'text-primary-400' : 'text-primary-600'
+                          }`}
+                        >
                           {product.name}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-gray-500">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 ${
+                          currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}
+                      >
                         {product.sku}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 ${
+                          currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                        }`}
+                      >
                         {product.category?.name}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3">
-                        <span className="font-medium text-red-600">
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 ${
+                          currentTheme === 'dark' ? 'text-red-400' : 'text-red-600'
+                        }`}
+                      >
+                        <span className="font-medium">
                           {product.current_stock} / {product.minimum_stock}
                         </span>
                       </td>
@@ -546,7 +651,12 @@ const Dashboard = () => {
                   ))}
                   {lowStockProducts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                      <td
+                        colSpan={4}
+                        className={`py-4 text-center ${
+                          currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}
+                      >
                         No low stock items found
                       </td>
                     </tr>

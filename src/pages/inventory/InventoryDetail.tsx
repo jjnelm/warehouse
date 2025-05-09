@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import { formatDate, getStockLevelColor } from '../../lib/utils';
 import UpdateStock from './UpdateStock';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 const InventoryDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ const InventoryDetail = () => {
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpdateStock, setShowUpdateStock] = useState(false);
+  const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
     if (id === 'add') {
@@ -61,7 +63,11 @@ const InventoryDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div
+        className={`flex h-full items-center justify-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <RefreshCw className="h-8 w-8 animate-spin text-primary-600" />
       </div>
     );
@@ -69,9 +75,18 @@ const InventoryDetail = () => {
 
   if (!inventory) {
     return (
-      <div className="text-center">
+      <div
+        className={`text-center ${
+          currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+        }`}
+      >
         <h2 className="text-lg font-medium">Inventory item not found</h2>
-        <Link to="/inventory" className="text-primary-600 hover:text-primary-700">
+        <Link
+          to="/inventory"
+          className={`font-medium ${
+            currentTheme === 'dark' ? 'text-primary-400 hover:text-primary-300' : 'text-primary-600 hover:text-primary-500'
+          }`}
+        >
           Back to Inventory
         </Link>
       </div>
@@ -92,7 +107,11 @@ const InventoryDetail = () => {
   }
 
   return (
-    <div className="animate-fade-in">
+    <div
+      className={`animate-fade-in ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -103,7 +122,7 @@ const InventoryDetail = () => {
           >
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold">
             {inventory.products?.name}
           </h1>
         </div>
@@ -120,15 +139,22 @@ const InventoryDetail = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        {/* Stock Details */}
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Stock Details</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Current Stock</dt>
-                <dd className="mt-1">
+                <dt className="text-sm font-medium">
+                  Current Stock
+                </dt>
+                <dd className="mt-1 flex items-center gap-2">
                   <span
                     className={`text-lg font-medium ${getStockLevelColor(
                       inventory.quantity,
@@ -137,39 +163,60 @@ const InventoryDetail = () => {
                   >
                     {inventory.quantity}
                   </span>
+                  {inventory.quantity <= (inventory.products?.minimum_stock || 0) && (
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        currentTheme === 'dark'
+                          ? 'bg-yellow-900 text-yellow-300'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      Low Stock
+                    </span>
+                  )}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Minimum Stock</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Minimum Stock
+                </dt>
+                <dd className="mt-1">
                   {inventory.products?.minimum_stock}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Location</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Location
+                </dt>
+                <dd className="mt-1">
                   {inventory.warehouse_locations &&
                     `${inventory.warehouse_locations.zone}-${inventory.warehouse_locations.aisle}-${inventory.warehouse_locations.rack}-${inventory.warehouse_locations.bin}`}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Last Updated
+                </dt>
+                <dd className="mt-1">
                   {formatDate(inventory.created_at)}
                 </dd>
               </div>
               {inventory.lot_number && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Lot Number</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium">
+                    Lot Number
+                  </dt>
+                  <dd className="mt-1">
                     {inventory.lot_number}
                   </dd>
                 </div>
               )}
               {inventory.expiry_date && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Expiry Date</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
+                  <dt className="text-sm font-medium">
+                    Expiry Date
+                  </dt>
+                  <dd className="mt-1">
                     {formatDate(inventory.expiry_date)}
                   </dd>
                 </div>
@@ -178,28 +225,47 @@ const InventoryDetail = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Product Information */}
+        <Card
+          className={`${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
+        >
           <CardHeader>
             <CardTitle>Product Information</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4">
               <div>
-                <dt className="text-sm font-medium text-gray-500">SKU</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  SKU
+                </dt>
+                <dd className="mt-1">
                   {inventory.products?.sku}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Category</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt className="text-sm font-medium">
+                  Category
+                </dt>
+                <dd className="mt-1">
                   {inventory.products?.categories?.name}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Description</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {inventory.products?.description || 'No description available.'}
+                <dt className="text-sm font-medium">
+                  Description
+                </dt>
+                <dd className="mt-1">
+                  {inventory.products?.description || (
+                    <span
+                      className={`italic ${
+                        currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}
+                    >
+                      No description available.
+                    </span>
+                  )}
                 </dd>
               </div>
             </dl>

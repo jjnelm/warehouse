@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package2, Truck, Filter, Search } from 'lucide-react';
+import { Package2, Truck, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Order, ShippingStatus } from '../../types';
 import { formatDate, formatCurrency } from '../../lib/utils';
@@ -8,6 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
+import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -16,6 +17,7 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [shippingStatusFilter, setShippingStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
     fetchOrders();
@@ -46,15 +48,15 @@ export default function Orders() {
   const getShippingStatusColor = (status: ShippingStatus) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return currentTheme === 'dark' ? 'bg-yellow-900 text-yellow-300' : 'bg-yellow-100 text-yellow-800';
       case 'in_transit':
-        return 'bg-blue-100 text-blue-800';
+        return currentTheme === 'dark' ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800';
       case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return currentTheme === 'dark' ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return currentTheme === 'dark' ? 'bg-red-900 text-red-300' : 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return currentTheme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -73,9 +75,13 @@ export default function Orders() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div
+      className={`container mx-auto px-4 py-8 ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+        <h1 className="text-2xl font-bold">Orders</h1>
         <Link to="/orders/create">
           <Button>
             <Package2 className="mr-2 h-4 w-4" />
@@ -93,13 +99,17 @@ export default function Orders() {
             placeholder="Search orders..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className={`pl-10 ${
+              currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            }`}
           />
         </div>
         <Select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="w-full"
+          className={`w-full ${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
           options={[
             { value: 'all', label: 'All Types' },
             { value: 'inbound', label: 'Inbound' },
@@ -109,7 +119,9 @@ export default function Orders() {
         <Select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full"
+          className={`w-full ${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
           options={[
             { value: 'all', label: 'All Order Statuses' },
             { value: 'pending', label: 'Pending' },
@@ -121,7 +133,9 @@ export default function Orders() {
         <Select
           value={shippingStatusFilter}
           onChange={(e) => setShippingStatusFilter(e.target.value)}
-          className="w-full"
+          className={`w-full ${
+            currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+          }`}
           options={[
             { value: 'all', label: 'All Shipping Statuses' },
             { value: 'pending', label: 'Pending' },
@@ -133,7 +147,11 @@ export default function Orders() {
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-lg bg-white shadow">
+      <div
+        className={`rounded-lg shadow ${
+          currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+        }`}
+      >
         {loading ? (
           <div className="flex h-64 items-center justify-center">
             <Package2 className="h-8 w-8 animate-spin text-primary-600" />
@@ -142,8 +160,12 @@ export default function Orders() {
           <div className="flex min-h-[400px] items-center justify-center p-6">
             <div className="text-center">
               <Package2 className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">No orders found</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <h3 className="mt-2 text-sm font-semibold">
+                No orders found
+              </h3>
+              <p className={`mt-1 text-sm ${
+                currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {searchTerm || statusFilter !== 'all' || shippingStatusFilter !== 'all' || typeFilter !== 'all'
                   ? 'Try adjusting your filters'
                   : 'Get started by creating a new order.'}
@@ -169,7 +191,9 @@ export default function Orders() {
                   <TableCell>
                     <Link
                       to={`/orders/${order.id}`}
-                      className="font-medium text-primary-600 hover:text-primary-700"
+                      className={`font-medium ${
+                        currentTheme === 'dark' ? 'text-primary-400 hover:text-primary-300' : 'text-primary-600 hover:text-primary-500'
+                      }`}
                     >
                       {order.order_number}
                     </Link>
