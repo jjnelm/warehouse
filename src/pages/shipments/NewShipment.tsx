@@ -54,7 +54,6 @@ export default function NewShipment() {
       if (error) throw error;
       setCustomers(data || []);
     } catch (error) {
-      console.error('Error fetching customers:', error);
       toast.error('Failed to fetch customers');
     }
   };
@@ -97,7 +96,6 @@ export default function NewShipment() {
       
       setProducts(transformedData);
     } catch (error) {
-      console.error('Error fetching products:', error);
       toast.error('Failed to fetch products');
     }
   };
@@ -168,7 +166,6 @@ export default function NewShipment() {
       toast.success('Shipment created successfully');
       navigate('/shipments');
     } catch (error) {
-      console.error('Error creating shipment:', error);
       toast.error('Failed to create shipment');
     } finally {
       setLoading(false);

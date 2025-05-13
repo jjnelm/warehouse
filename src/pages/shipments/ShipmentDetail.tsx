@@ -61,7 +61,6 @@ export default function ShipmentDetail() {
       if (error) throw error;
       setShipment(data);
     } catch (error) {
-      console.error('Error fetching shipment:', error);
       toast.error('Failed to fetch shipment details');
     } finally {
       setLoading(false);
@@ -82,7 +81,6 @@ export default function ShipmentDetail() {
       toast.success('Shipment status updated');
       fetchShipment();
     } catch (error) {
-      console.error('Error updating shipment status:', error);
       toast.error('Error updating shipment status');
     } finally {
       setUpdating(false);
@@ -116,7 +114,6 @@ export default function ShipmentDetail() {
       setTrackingNote('');
       fetchShipment();
     } catch (error) {
-      console.error('Error updating shipping status:', error);
       toast.error('Error updating shipping status');
     } finally {
       setUpdating(false);

@@ -20,7 +20,6 @@ import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function Shipments() {
-  console.log('Shipments component mounting...');
   const [shipments, setShipments] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,14 +28,12 @@ export default function Shipments() {
   const { currentTheme } = useTheme();
 
   useEffect(() => {
-    console.log('Shipments useEffect running...');
     fetchShipments();
   }, []);
 
   const fetchShipments = async () => {
     try {
       setLoading(true);
-      console.log('Fetching shipments...');
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -58,11 +55,7 @@ export default function Shipments() {
         .eq('order_type', 'outbound')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching shipments:', error);
-        throw error;
-      }
-      console.log('Fetched shipments:', data);
+      if (error) throw error;
       setShipments(data || []);
     } catch (error) {
       console.error('Error fetching shipments:', error);
