@@ -11,7 +11,8 @@ import {
   Warehouse, 
   X,
   Store,
-  MapPin
+  MapPin,
+  Truck // Import the Truck icon for Shipments
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -28,6 +29,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Inventory', href: '/inventory', icon: Box },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },
+    { name: 'Shipments', href: '/shipments', icon: Truck },
     { name: 'Products', href: '/products', icon: PackageOpen },
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Suppliers', href: '/suppliers', icon: Store },

@@ -1,16 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
+import { useTheme } from '../../contexts/ThemeContext';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 export default function AddCustomer() {
   const navigate = useNavigate();
-  const { currentTheme } = useTheme(); // Get the current theme
+  const { currentTheme } = useTheme();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    contact_name: ''
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission logic will be implemented here
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert([formData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Customer added successfully');
+      navigate('/customers');
+    } catch (error) {
+      console.error('Error adding customer:', error);
+      toast.error('Failed to add customer');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,6 +69,26 @@ export default function AddCustomer() {
               type="text"
               placeholder="Enter customer name"
               required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="contact_name"
+              className={`block text-sm font-medium mb-1 ${
+                currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}
+            >
+              Contact Name
+            </label>
+            <Input
+              id="contact_name"
+              type="text"
+              placeholder="Enter contact name"
+              value={formData.contact_name}
+              onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
             />
           </div>
 
@@ -58,6 +106,8 @@ export default function AddCustomer() {
               type="email"
               placeholder="Enter customer email"
               required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
@@ -74,6 +124,26 @@ export default function AddCustomer() {
               id="phone"
               type="tel"
               placeholder="Enter phone number"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="address"
+              className={`block text-sm font-medium mb-1 ${
+                currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}
+            >
+              Address
+            </label>
+            <Input
+              id="address"
+              type="text"
+              placeholder="Enter address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
             />
           </div>
 
@@ -85,8 +155,8 @@ export default function AddCustomer() {
             >
               Cancel
             </Button>
-            <Button type="submit">
-              Add Customer
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Adding...' : 'Add Customer'}
             </Button>
           </div>
         </form>

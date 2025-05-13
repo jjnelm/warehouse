@@ -23,6 +23,9 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import AddInventory from './pages/inventory/AddInventory';
+import Shipments from './pages/shipments/Shipments';
+import ShipmentDetail from './pages/shipments/ShipmentDetail';
+import NewShipment from './pages/shipments/NewShipment';
 
 const AppRoutes = () => {
   const { user } = useAuthStore();
@@ -53,6 +56,9 @@ const AppRoutes = () => {
           <Route path="/customers/add" element={<AddCustomer />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/shipments" element={<Shipments />} />
+          <Route path="/shipments/new" element={<NewShipment />} />
+          <Route path="/shipments/:id" element={<ShipmentDetail />} />
         </Route>
         
         <Route path="*" element={<NotFound />} />
@@ -61,4 +67,4 @@ const AppRoutes = () => {
   );
 };
 
-export default AppRoutes; 
+export default AppRoutes;

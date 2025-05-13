@@ -84,8 +84,13 @@ const Dashboard = () => {
         (item: any) => item.quantity <= (item.product?.minimum_stock || 0)
       ) || [];
 
+      // Remove duplicates by product ID
+      const uniqueLowStockInventory = Array.from(
+        new Map(lowStockInventory.map((item: any) => [item.product.id, item])).values()
+      ) as any[];
+
       // Transform low stock products
-      const transformedLowStock = lowStockInventory.map((item: any) => ({
+      const transformedLowStock = uniqueLowStockInventory.map((item: any) => ({
         id: item.product.id,
         name: item.product.name,
         sku: item.product.sku,
@@ -139,7 +144,13 @@ const Dashboard = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      setRecentOrders((recentOrdersData || []) as unknown as Order[]);
+      // Transform orders to ensure unique IDs
+      const transformedOrders = (recentOrdersData || []).map((order: any) => ({
+        ...order,
+        id: `order-${order.id}` // Add prefix to ensure uniqueness
+      }));
+
+      setRecentOrders(transformedOrders as unknown as Order[]);
 
       // Fetch inventory by category
       const { data: categoryInventory } = await supabase
@@ -609,7 +620,7 @@ const Dashboard = () => {
                   }`}
                 >
                   {lowStockProducts.map((product) => (
-                    <tr key={product.id} className="text-sm">
+                    <tr key={`low-stock-${product.id}`} className="text-sm">
                       <td
                         className={`whitespace-nowrap py-3 pl-4 pr-3 font-medium ${
                           currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
