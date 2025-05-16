@@ -18,6 +18,7 @@ import Suppliers from './pages/suppliers/Suppliers';
 import AddSupplier from './pages/suppliers/AddSupplier';
 import Customers from './pages/customers/Customers';
 import AddCustomer from './pages/customers/AddCustomer';
+import CustomerManagement from './pages/CustomerManagement';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -26,17 +27,27 @@ import AddInventory from './pages/inventory/AddInventory';
 import Shipments from './pages/shipments/Shipments';
 import ShipmentDetail from './pages/shipments/ShipmentDetail';
 import NewShipment from './pages/shipments/NewShipment';
+import ProductQRView from './pages/products/ProductQRView';
+
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuthStore();
+  return user ? <>{children}</> : <Navigate to="/login" />;
+};
 
 const AppRoutes = () => {
-  const { user } = useAuthStore();
-
   return (
     <>
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+        {/* Public routes */}
+        <Route path="/p/:sku" element={<ProductQRView />} />
         
-        <Route element={user ? <DashboardLayout /> : <Navigate to="/login" />}>
+        {/* Auth routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
+
+        {/* Protected routes */}
+        <Route element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/add" element={<AddProduct />} />
@@ -54,6 +65,7 @@ const AppRoutes = () => {
           <Route path="/suppliers/add" element={<AddSupplier />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/customers/add" element={<AddCustomer />} />
+          <Route path="/customers/:id" element={<CustomerManagement />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/shipments" element={<Shipments />} />
@@ -61,6 +73,7 @@ const AppRoutes = () => {
           <Route path="/shipments/:id" element={<ShipmentDetail />} />
         </Route>
         
+        {/* Catch all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

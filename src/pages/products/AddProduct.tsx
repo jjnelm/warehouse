@@ -1,7 +1,8 @@
-  import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -22,7 +23,21 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
-  const { register, handleSubmit, formState: { errors } } = useForm<AddProductForm>();
+  const [qrValue, setQrValue] = useState('');
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<AddProductForm>();
+
+  const watchSku = watch('sku');
+  const watchName = watch('name');
+
+  useEffect(() => {
+    if (watchSku && watchName) {
+      setQrValue(JSON.stringify({
+        sku: watchSku,
+        name: watchName,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  }, [watchSku, watchName]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -104,96 +119,129 @@ const AddProduct = () => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <Input
-                label="Product Name"
-                error={errors.name?.message}
-                {...register('name', {
-                  required: 'Product name is required',
-                })}
-              />
-
-              <Input
-                label="SKU"
-                error={errors.sku?.message}
-                {...register('sku', {
-                  required: 'SKU is required',
-                  pattern: {
-                    value: /^[A-Za-z0-9-]+$/,
-                    message: 'SKU can only contain letters, numbers, and hyphens',
-                  },
-                })}
-              />
-
-              <Select
-                label="Category"
-                options={categories}
-                error={errors.category_id?.message}
-                {...register('category_id', {
-                  required: 'Category is required',
-                })}
-              />
-
-              <Input
-                type="number"
-                label="Unit Price"
-                step="0.01"
-                error={errors.unit_price?.message}
-                {...register('unit_price', {
-                  required: 'Unit price is required',
-                  min: {
-                    value: 0,
-                    message: 'Price must be greater than 0',
-                  },
-                })}
-              />
-
-              <Input
-                type="number"
-                label="Minimum Stock"
-                error={errors.minimum_stock?.message}
-                {...register('minimum_stock', {
-                  required: 'Minimum stock is required',
-                  min: {
-                    value: 0,
-                    message: 'Minimum stock must be greater than 0',
-                  },
-                })}
-              />
-
-              <div className="col-span-2">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Input
-                  label="Description"
-                  error={errors.description?.message}
-                  {...register('description')}
+                  label="Product Name"
+                  error={errors.name?.message}
+                  {...register('name', {
+                    required: 'Product name is required',
+                  })}
                 />
-              </div>
-            </div>
 
-            <div className="flex justify-end space-x-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/products')}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                isLoading={loading}
-              >
-                Create Product
-              </Button>
+                <Input
+                  label="SKU"
+                  error={errors.sku?.message}
+                  {...register('sku', {
+                    required: 'SKU is required',
+                    pattern: {
+                      value: /^[A-Za-z0-9-]+$/,
+                      message: 'SKU can only contain letters, numbers, and hyphens',
+                    },
+                  })}
+                />
+
+                <Select
+                  label="Category"
+                  options={categories}
+                  error={errors.category_id?.message}
+                  {...register('category_id', {
+                    required: 'Category is required',
+                  })}
+                />
+
+                <Input
+                  type="number"
+                  label="Unit Price"
+                  step="0.01"
+                  error={errors.unit_price?.message}
+                  {...register('unit_price', {
+                    required: 'Unit price is required',
+                    min: {
+                      value: 0,
+                      message: 'Price must be greater than 0',
+                    },
+                  })}
+                />
+
+                <Input
+                  type="number"
+                  label="Minimum Stock"
+                  error={errors.minimum_stock?.message}
+                  {...register('minimum_stock', {
+                    required: 'Minimum stock is required',
+                    min: {
+                      value: 0,
+                      message: 'Minimum stock must be greater than 0',
+                    },
+                  })}
+                />
+
+                <div className="col-span-2">
+                  <Input
+                    label="Description"
+                    error={errors.description?.message}
+                    {...register('description')}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/products')}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  isLoading={loading}
+                >
+                  Create Product
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Product QR Code</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center p-4">
+              {qrValue ? (
+                <>
+                  <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                    <QRCodeSVG
+                      value={qrValue}
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 text-center">
+                    This QR code contains the product SKU and name.
+                    <br />
+                    It will be generated automatically as you fill in the product details.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500 text-center">
+                  Fill in the product SKU and name to generate a QR code.
+                </p>
+              )}
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

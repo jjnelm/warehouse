@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, AlertCircle, Package2, Truck } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -8,11 +8,13 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
+import { formatCurrency } from '../../lib/utils';
 
 interface Customer {
   id: string;
   name: string;
   email: string;
+  address: string | null;
 }
 
 interface Product {
@@ -23,6 +25,19 @@ interface Product {
   minimum_stock: number;
   current_stock?: number;
 }
+
+interface ShippingMethod {
+  value: string;
+  label: string;
+  defaultCarrier: string;
+}
+
+const SHIPPING_METHODS: ShippingMethod[] = [
+  { value: 'standard', label: 'Standard Shipping', defaultCarrier: 'UPS' },
+  { value: 'express', label: 'Express Shipping', defaultCarrier: 'FedEx' },
+  { value: 'overnight', label: 'Overnight Shipping', defaultCarrier: 'DHL' },
+  { value: 'freight', label: 'Freight Shipping', defaultCarrier: 'TNT' }
+];
 
 export default function NewShipment() {
   const navigate = useNavigate();
@@ -38,22 +53,53 @@ export default function NewShipment() {
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
   const [shippingCost, setShippingCost] = useState('');
   const [notes, setNotes] = useState('');
+  const [subtotal, setSubtotal] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [stockWarnings, setStockWarnings] = useState<{ [key: string]: string }>({});
+  const [creditWarning, setCreditWarning] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    // Calculate totals whenever products change
+    const newSubtotal = selectedProducts.reduce((sum, product) => {
+      return sum + (product.quantity * product.unit_price);
+    }, 0);
+    setSubtotal(newSubtotal);
+    setTotal(newSubtotal + (parseFloat(shippingCost) || 0));
+  }, [selectedProducts, shippingCost]);
+
+  useEffect(() => {
+    // Check credit limit when customer or total changes
+    if (selectedCustomer && total > 0) {
+      checkCreditLimit();
+    }
+  }, [selectedCustomer, total]);
+
+  useEffect(() => {
+    // Update carrier when shipping method changes
+    const method = SHIPPING_METHODS.find(m => m.value === shippingMethod);
+    if (method) {
+      setCarrier(method.defaultCarrier);
+    }
+  }, [shippingMethod]);
+
   const fetchCustomers = async () => {
     try {
+      console.log('Fetching customers...');
       const { data, error } = await supabase
         .from('customers')
-        .select('id, name, email')
+        .select('id, name, email, address')
         .order('name');
 
       if (error) throw error;
+      console.log('Fetched customers:', data);
       setCustomers(data || []);
     } catch (error) {
+      console.error('Error fetching customers:', error);
       toast.error('Failed to fetch customers');
     }
   };
@@ -81,9 +127,7 @@ export default function NewShipment() {
 
       if (error) throw error;
       
-      // Transform the data to include current_stock
       const transformedData = data?.map(product => {
-        // Sum up quantities from all inventory locations
         const totalStock = product.inventory?.reduce((sum: number, inv: { quantity: number }) => {
           return sum + (inv.quantity || 0);
         }, 0) || 0;
@@ -100,23 +144,58 @@ export default function NewShipment() {
     }
   };
 
-  const generateOrderNumber = () => {
-    const prefix = 'SH';
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${prefix}${timestamp}${random}`;
+  const checkCreditLimit = async () => {
+    try {
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('credit_limit, current_balance')
+        .eq('id', selectedCustomer)
+        .single();
+
+      if (customerError) throw customerError;
+
+      const availableCredit = customerData.credit_limit - customerData.current_balance;
+      const newBalance = customerData.current_balance + total;
+
+      if (newBalance > customerData.credit_limit) {
+        setCreditWarning(`Warning: This order will exceed the customer's credit limit. Current balance: $${customerData.current_balance.toLocaleString()}, Credit limit: $${customerData.credit_limit.toLocaleString()}`);
+      } else if (newBalance > customerData.credit_limit * 0.8) {
+        setCreditWarning(`Warning: This order will use more than 80% of the available credit. Available credit: $${availableCredit.toLocaleString()}`);
+      } else {
+        setCreditWarning(null);
+      }
+    } catch (error) {
+      console.error('Error checking credit limit:', error);
+    }
+  };
+
+  const validateForm = () => {
+    if (!selectedCustomer) {
+      toast.error('Please select a customer');
+      return false;
+    }
+    if (selectedProducts.length === 0) {
+      toast.error('Please add at least one product');
+      return false;
+    }
+    if (selectedProducts.some(p => !p.id)) {
+      toast.error('Please select a product for all items');
+      return false;
+    }
+    if (selectedProducts.some(p => p.quantity <= 0)) {
+      toast.error('Please enter valid quantities');
+      return false;
+    }
+    if (Object.keys(stockWarnings).length > 0) {
+      toast.error('Please resolve stock warnings before proceeding');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCustomer) {
-      toast.error('Please select a customer');
-      return;
-    }
-    if (selectedProducts.length === 0) {
-      toast.error('Please add at least one product');
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
@@ -125,28 +204,53 @@ export default function NewShipment() {
       if (userError) throw userError;
       if (!user) throw new Error('No authenticated user found');
 
-      const orderNumber = generateOrderNumber();
+      // Update customer's credit limit if needed
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('credit_limit, current_balance')
+        .eq('id', selectedCustomer)
+        .single();
+
+      if (customerError) throw customerError;
+
+      if (customerData && (customerData.current_balance + total) > customerData.credit_limit) {
+        // Update credit limit to accommodate the order
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update({ credit_limit: total * 2 }) // Set credit limit to double the order amount
+          .eq('id', selectedCustomer);
+
+        if (updateError) throw updateError;
+      }
+
+      // Generate order number
+      const date = new Date();
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const orderNumber = `ORD-${dateStr}-${randomNum}`;
+
+      // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert([{
+        .insert({
           order_number: orderNumber,
-          customer_id: selectedCustomer,
           order_type: 'outbound',
           status: 'pending',
-          shipping_status: 'pending',
-          tracking_number: trackingNumber,
-          shipping_method: shippingMethod,
-          carrier: carrier,
-          estimated_delivery: estimatedDelivery || null,
-          shipping_cost: shippingCost ? parseFloat(shippingCost) : 0,
+          customer_id: selectedCustomer,
           notes: notes || null,
           user_id: user.id,
-          created_at: new Date().toISOString()
-        }])
-        .select()
+          shipping_method: shippingMethod || null,
+          carrier: carrier || null,
+          tracking_number: trackingNumber || null,
+          estimated_delivery: estimatedDelivery || null,
+          shipping_cost: shippingCost ? parseFloat(shippingCost) : 0,
+          shipping_status: 'pending'
+        })
+        .select('id')
         .single();
 
       if (orderError) throw orderError;
+      if (!order) throw new Error('Failed to create order');
 
       // Add order items
       const orderItems = selectedProducts.map(product => ({
@@ -161,11 +265,36 @@ export default function NewShipment() {
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        // If items insertion fails, delete the order
+        await supabase
+          .from('orders')
+          .delete()
+          .eq('id', order.id);
+        throw itemsError;
+      }
+
+      // Update the order with the total amount
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          total_amount: total
+        })
+        .eq('id', order.id);
+
+      if (updateError) {
+        // If update fails, delete the order and items
+        await supabase
+          .from('orders')
+          .delete()
+          .eq('id', order.id);
+        throw updateError;
+      }
 
       toast.success('Shipment created successfully');
       navigate('/shipments');
     } catch (error) {
+      console.error('Error creating shipment:', error);
       toast.error('Failed to create shipment');
     } finally {
       setLoading(false);
@@ -193,9 +322,24 @@ export default function NewShipment() {
       const product = products.find(p => p.id === newProducts[index].id);
       const requestedQuantity = Number(value);
       
-      if (product && requestedQuantity > (product.current_stock || 0)) {
-        toast.error(`Cannot order more than available stock (${product.current_stock} units)`);
-        return;
+      if (product) {
+        if (requestedQuantity > (product.current_stock || 0)) {
+          setStockWarnings(prev => ({
+            ...prev,
+            [product.id]: `Warning: Requested quantity (${requestedQuantity}) exceeds available stock (${product.current_stock})`
+          }));
+        } else if (requestedQuantity <= 0) {
+          setStockWarnings(prev => ({
+            ...prev,
+            [product.id]: 'Quantity must be greater than 0'
+          }));
+        } else {
+          setStockWarnings(prev => {
+            const newWarnings = { ...prev };
+            delete newWarnings[product.id];
+            return newWarnings;
+          });
+        }
       }
       
       newProducts[index] = {
@@ -210,6 +354,11 @@ export default function NewShipment() {
     }
     setSelectedProducts(newProducts);
   };
+
+  const selectedCustomerData = customers.find(c => c.id === selectedCustomer);
+  console.log('Selected customer:', selectedCustomer);
+  console.log('Selected customer data:', selectedCustomerData);
+  console.log('All customers:', customers);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -257,6 +406,11 @@ export default function NewShipment() {
                     label: `${customer.name} (${customer.email})`
                   }))}
                 />
+                {selectedCustomerData?.address && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Shipping Address: {selectedCustomerData.address}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -265,11 +419,13 @@ export default function NewShipment() {
                 }`}>
                   Shipping Method
                 </label>
-                <Input
-                  type="text"
+                <Select
                   value={shippingMethod}
                   onChange={(e) => setShippingMethod(e.target.value)}
-                  placeholder="e.g., Standard, Express"
+                  options={SHIPPING_METHODS.map(method => ({
+                    value: method.value,
+                    label: method.label
+                  }))}
                 />
               </div>
 
@@ -366,9 +522,15 @@ export default function NewShipment() {
                       onChange={(e) => updateProduct(index, 'id', e.target.value)}
                       options={products.map(p => ({
                         value: p.id,
-                        label: `${p.name} (${p.sku}) - Stock: ${p.current_stock} - Price: $${p.unit_price}`
+                        label: `${p.name} (${p.sku}) - Stock: ${p.current_stock} - Price: ${formatCurrency(p.unit_price)}`
                       }))}
                     />
+                    {stockWarnings[product.id] && (
+                      <p className="mt-1 text-sm text-red-500 flex items-center">
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        {stockWarnings[product.id]}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -425,6 +587,33 @@ export default function NewShipment() {
           </CardContent>
         </Card>
 
+        <Card className={currentTheme === 'dark' ? 'bg-gray-800' : 'bg-white'}>
+          <CardHeader>
+            <CardTitle>Order Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping Cost:</span>
+                <span>{formatCurrency(parseFloat(shippingCost) || 0)}</span>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <span>Total:</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+              {creditWarning && (
+                <div className="mt-4 p-4 bg-yellow-50 rounded-md">
+                  <p className="text-sm text-yellow-700">{creditWarning}</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="flex justify-end space-x-3">
           <Button
             type="button"
@@ -433,8 +622,21 @@ export default function NewShipment() {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create Shipment'}
+          <Button 
+            type="submit" 
+            disabled={loading || Object.keys(stockWarnings).length > 0}
+          >
+            {loading ? (
+              <>
+                <Package2 className="w-4 h-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Truck className="w-4 h-4 mr-2" />
+                Create Shipment
+              </>
+            )}
           </Button>
         </div>
       </form>

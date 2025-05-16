@@ -5,6 +5,7 @@ import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
 import AppRoutes from './routes';
 import { ThemeProvider } from './contexts/ThemeContext';
+import ProductQRView from './pages/products/ProductQRView';
 
 function App() {
   const { setUser } = useAuthStore();

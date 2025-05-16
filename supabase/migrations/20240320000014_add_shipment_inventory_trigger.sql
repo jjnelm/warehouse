@@ -13,6 +13,13 @@ BEGIN
 
   -- Only process outbound orders (shipments)
   IF NEW.order_type = 'outbound' AND NEW.status = 'completed' AND OLD.status != 'completed' THEN
+    -- Update customer's current balance
+    IF NEW.customer_id IS NOT NULL THEN
+      UPDATE customers
+      SET current_balance = current_balance + NEW.total_amount
+      WHERE id = NEW.customer_id;
+    END IF;
+
     -- Loop through all items in the order
     FOR order_item IN 
       SELECT product_id, quantity 
@@ -51,22 +58,19 @@ BEGIN
         END IF;
 
         IF inventory_record.quantity >= remaining_quantity THEN
-          -- This location has enough stock to fulfill the remaining quantity
+          -- This location has enough stock
           UPDATE inventory
           SET quantity = quantity - remaining_quantity
           WHERE id = inventory_record.id;
           remaining_quantity := 0;
         ELSE
-          -- This location doesn't have enough stock, use all of it
+          -- Use all stock from this location
           UPDATE inventory
           SET quantity = 0
           WHERE id = inventory_record.id;
           remaining_quantity := remaining_quantity - inventory_record.quantity;
         END IF;
       END LOOP;
-
-      RAISE NOTICE 'Updated inventory for product %: deducted % units', 
-        order_item.product_id, order_item.quantity;
     END LOOP;
   ELSE
     RAISE NOTICE 'Skipping inventory update: order_type=%, old_status=%, new_status=%', 
