@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import { formatDate, getStockLevelColor } from '../../lib/utils';
 import UpdateStock from './UpdateStock';
+import UpdateLocation from './UpdateLocation';
 import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
 
 const InventoryDetail = () => {
@@ -15,6 +16,7 @@ const InventoryDetail = () => {
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpdateStock, setShowUpdateStock] = useState(false);
+  const [showUpdateLocation, setShowUpdateLocation] = useState(false);
   const { currentTheme } = useTheme(); // Get the current theme
 
   useEffect(() => {
@@ -106,6 +108,19 @@ const InventoryDetail = () => {
     );
   }
 
+  if (showUpdateLocation) {
+    return (
+      <UpdateLocation
+        inventoryId={inventory.id}
+        currentLocationId={inventory.location_id}
+        onSuccess={() => {
+          setShowUpdateLocation(false);
+          fetchInventoryItem();
+        }}
+      />
+    );
+  }
+
   return (
     <div
       className={`animate-fade-in ${
@@ -131,6 +146,14 @@ const InventoryDetail = () => {
             variant="outline"
             size="sm"
             icon={<Edit className="h-4 w-4" />}
+            onClick={() => setShowUpdateLocation(true)}
+          >
+            Update Location
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Edit className="h-4 w-4" />}
             onClick={() => setShowUpdateStock(true)}
           >
             Update Stock
@@ -138,50 +161,30 @@ const InventoryDetail = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Stock Details */}
+      <div className="grid gap-6 md:grid-cols-2">
         <Card
           className={`${
             currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
           }`}
         >
           <CardHeader>
-            <CardTitle>Stock Details</CardTitle>
+            <CardTitle>Inventory Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-4">
               <div>
                 <dt className="text-sm font-medium">
-                  Current Stock
+                  Quantity
                 </dt>
-                <dd className="mt-1 flex items-center gap-2">
+                <dd className="mt-1">
                   <span
-                    className={`text-lg font-medium ${getStockLevelColor(
+                    className={`font-medium ${getStockLevelColor(
                       inventory.quantity,
                       inventory.products?.minimum_stock || 0
                     )}`}
                   >
                     {inventory.quantity}
                   </span>
-                  {inventory.quantity <= (inventory.products?.minimum_stock || 0) && (
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        currentTheme === 'dark'
-                          ? 'bg-yellow-900 text-yellow-300'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      Low Stock
-                    </span>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium">
-                  Minimum Stock
-                </dt>
-                <dd className="mt-1">
-                  {inventory.products?.minimum_stock}
                 </dd>
               </div>
               <div>
@@ -225,7 +228,6 @@ const InventoryDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Product Information */}
         <Card
           className={`${
             currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'

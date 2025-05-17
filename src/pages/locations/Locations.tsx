@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, QrCode } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { WarehouseLocation } from '../../types';
-import  { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui/Table';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Locations = () => {
   const [locations, setLocations] = useState<WarehouseLocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentTheme } = useTheme();
 
   useEffect(() => {
     fetchLocations();
@@ -57,6 +59,7 @@ const Locations = () => {
                 <TableHead>Location</TableHead>
                 <TableHead>Capacity</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -88,19 +91,36 @@ const Locations = () => {
                 locations.map((location) => (
                   <TableRow key={location.id}>
                     <TableCell>
-                      {`${location.zone}-${location.aisle}-${location.rack}-${location.bin}`}
+                      <div className="flex items-center">
+                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                        {`${location.zone}-${location.aisle}-${location.rack}-${location.bin}`}
+                      </div>
                     </TableCell>
                     <TableCell>{location.capacity}</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           location.reserved
-                            ? 'bg-yellow-100 text-yellow-800'
+                            ? currentTheme === 'dark'
+                              ? 'bg-yellow-900 text-yellow-300'
+                              : 'bg-yellow-100 text-yellow-800'
+                            : currentTheme === 'dark'
+                            ? 'bg-green-900 text-green-300'
                             : 'bg-green-100 text-green-800'
                         }`}
                       >
                         {location.reserved ? 'Reserved' : 'Available'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Link to={`/locations/${location.id}/qr`}>
+                          <Button variant="outline" size="sm">
+                            <QrCode className="mr-2 h-4 w-4" />
+                            View QR
+                          </Button>
+                        </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

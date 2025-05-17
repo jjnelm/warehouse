@@ -10,6 +10,7 @@ import Modal from '../../components/ui/Modal';
 import { formatCurrency, formatDate, getStockLevelColor } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
+import UpdateLocation from '../inventory/UpdateLocation';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -21,6 +22,7 @@ const ProductDetail = () => {
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { currentTheme } = useTheme(); // Get the current theme
+  const [editingInventoryId, setEditingInventoryId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProduct();
@@ -125,6 +127,22 @@ const ProductDetail = () => {
       setDeleteModalOpen(false);
     }
   };
+
+  if (editingInventoryId) {
+    const inventoryItem = inventory.find(item => item.id === editingInventoryId);
+    if (inventoryItem) {
+      return (
+        <UpdateLocation
+          inventoryId={inventoryItem.id}
+          currentLocationId={inventoryItem.location_id}
+          onSuccess={() => {
+            setEditingInventoryId(null);
+            fetchInventory();
+          }}
+        />
+      );
+    }
+  }
 
   if (loading) {
     return (
@@ -368,9 +386,19 @@ const ProductDetail = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <dt className="text-sm font-medium">Location</dt>
-                          <dd className="mt-1">
-                            {item.warehouse_locations &&
-                              `${item.warehouse_locations.zone}-${item.warehouse_locations.aisle}-${item.warehouse_locations.rack}-${item.warehouse_locations.bin}`}
+                          <dd className="mt-1 flex items-center justify-between">
+                            <span>
+                              {item.warehouse_locations &&
+                                `${item.warehouse_locations.zone}-${item.warehouse_locations.aisle}-${item.warehouse_locations.rack}-${item.warehouse_locations.bin}`}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Edit className="h-4 w-4" />}
+                              onClick={() => setEditingInventoryId(item.id)}
+                            >
+                              Edit
+                            </Button>
                           </dd>
                         </div>
                         <div>
@@ -394,7 +422,9 @@ const ProductDetail = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-gray-500">No inventory records found</p>
+                <p className={`text-center ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  No inventory items found for this product.
+                </p>
               )}
             </CardContent>
           </Card>

@@ -11,6 +11,7 @@ import Inventory from './pages/inventory/Inventory';
 import InventoryDetail from './pages/inventory/InventoryDetail';
 import Locations from './pages/locations/Locations';
 import AddLocation from './pages/locations/AddLocation';
+import LocationQRView from './pages/locations/LocationQRView';
 import Orders from './pages/orders/Orders';
 import OrderDetail from './pages/orders/OrderDetail';
 import CreateOrder from './pages/orders/CreateOrder';
@@ -41,6 +42,7 @@ const AppRoutes = () => {
       <Routes>
         {/* Public routes */}
         <Route path="/p/:sku" element={<ProductQRView />} />
+        <Route path="/l/:locationId" element={<LocationQRView />} />
         
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
@@ -58,6 +60,7 @@ const AppRoutes = () => {
           <Route path="/inventory/:id" element={<InventoryDetail />} />
           <Route path="/locations" element={<Locations />} />
           <Route path="/locations/add" element={<AddLocation />} />
+          <Route path="/locations/:id/qr" element={<LocationQRView />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/create" element={<CreateOrder />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
