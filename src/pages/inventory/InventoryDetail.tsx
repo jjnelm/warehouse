@@ -9,6 +9,8 @@ import { formatDate, getStockLevelColor } from '../../lib/utils';
 import UpdateStock from './UpdateStock';
 import UpdateLocation from './UpdateLocation';
 import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
+import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 const InventoryDetail = () => {
   const { id } = useParams();
@@ -34,21 +36,24 @@ const InventoryDetail = () => {
         .from('inventory')
         .select(`
           *,
-          products:product_id (
-            id,
+          products (
             name,
             sku,
             description,
             minimum_stock,
-            categories:category_id (name)
+            category:category_id (
+              name
+            )
           ),
-          warehouse_locations:location_id (
+          warehouse_locations (
             zone,
             aisle,
             rack,
             bin,
             capacity
-          )
+          ),
+          created_by_user:profiles!inventory_created_by_fkey(email),
+          updated_by_user:profiles!inventory_updated_by_fkey(email)
         `)
         .eq('id', id)
         .single();
@@ -57,6 +62,7 @@ const InventoryDetail = () => {
       setInventory(data);
     } catch (error) {
       console.error('Error fetching inventory item:', error);
+      toast.error('Failed to fetch inventory item');
       navigate('/inventory');
     } finally {
       setLoading(false);
@@ -196,13 +202,29 @@ const InventoryDetail = () => {
                     `${inventory.warehouse_locations.zone}-${inventory.warehouse_locations.aisle}-${inventory.warehouse_locations.rack}-${inventory.warehouse_locations.bin}`}
                 </dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium">
-                  Last Updated
-                </dt>
-                <dd className="mt-1">
-                  {formatDate(inventory.created_at)}
-                </dd>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Created</p>
+                  <p className="font-medium">
+                    {format(new Date(inventory.created_at), 'MMM d, yyyy HH:mm')}
+                    {inventory.created_by_user?.email && (
+                      <span className="ml-2 text-gray-500">
+                        by {inventory.created_by_user.email}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Last Updated</p>
+                  <p className="font-medium">
+                    {format(new Date(inventory.updated_at), 'MMM d, yyyy HH:mm')}
+                    {inventory.updated_by_user?.email && (
+                      <span className="ml-2 text-gray-500">
+                        by {inventory.updated_by_user.email}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
               {inventory.lot_number && (
                 <div>
@@ -251,7 +273,7 @@ const InventoryDetail = () => {
                   Category
                 </dt>
                 <dd className="mt-1">
-                  {inventory.products?.categories?.name}
+                  {inventory.products?.category?.name}
                 </dd>
               </div>
               <div>

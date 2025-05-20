@@ -10,6 +10,7 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
+import AssignLocations from './AssignLocations';
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -18,6 +19,7 @@ export default function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [trackingNote, setTrackingNote] = useState('');
+  const [showLocationAssignment, setShowLocationAssignment] = useState(false);
   const { currentTheme } = useTheme();
 
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function OrderDetail() {
             *,
             product:products(name, sku)
           ),
-          tracking_history:shipment_tracking(*)
+          tracking_history:shipment_tracking(*),
+          updated_by_user:profiles!orders_user_id_fkey(email)
         `)
         .eq('id', id)
         .single();
@@ -55,6 +58,11 @@ export default function OrderDetail() {
 
   const updateOrderStatus = async (status: string) => {
     if (!order) return;
+
+    if (status === 'completed' && order.order_type === 'inbound') {
+      setShowLocationAssignment(true);
+      return;
+    }
 
     try {
       setUpdating(true);
@@ -135,6 +143,33 @@ export default function OrderDetail() {
     );
   }
 
+  if (showLocationAssignment) {
+    return (
+      <div className={`container mx-auto px-4 py-8 ${
+        currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+      }`}>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => setShowLocationAssignment(false)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-bold">Complete Order {order.order_number}</h1>
+          </div>
+        </div>
+        <AssignLocations
+          orderId={order.id}
+          items={order.items || []}
+          onSuccess={() => {
+            setShowLocationAssignment(false);
+            fetchOrder();
+          }}
+          onCancel={() => setShowLocationAssignment(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`container mx-auto px-4 py-8 ${
@@ -183,7 +218,14 @@ export default function OrderDetail() {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Created</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(order.created_at)}</dd>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {formatDate(order.created_at)}
+                  {order.created_by_user?.email && (
+                    <span className="ml-2 text-gray-500">
+                      by {order.created_by_user.email}
+                    </span>
+                  )}
+                </dd>
               </div>
               {order.expected_arrival && (
                 <div>
@@ -195,6 +237,19 @@ export default function OrderDetail() {
                 <div className="col-span-2">
                   <dt className="text-sm font-medium text-gray-500">Notes</dt>
                   <dd className="mt-1 text-sm text-gray-900">{order.notes}</dd>
+                </div>
+              )}
+              {order.updated_at && (
+                <div className="col-span-2">
+                  <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {formatDate(order.updated_at)}
+                    {order.updated_by_user?.email && (
+                      <span className="ml-2 text-gray-500">
+                        by {order.updated_by_user.email}
+                      </span>
+                    )}
+                  </dd>
                 </div>
               )}
             </dl>

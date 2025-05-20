@@ -1,7 +1,29 @@
--- Add credit limit and current balance columns to customers table
+-- Drop existing constraints if they exist
 ALTER TABLE customers
-ADD COLUMN IF NOT EXISTS credit_limit DECIMAL(10,2) DEFAULT 0,
-ADD COLUMN IF NOT EXISTS current_balance DECIMAL(10,2) DEFAULT 0;
+DROP CONSTRAINT IF EXISTS credit_limit_positive,
+DROP CONSTRAINT IF EXISTS current_balance_positive;
+
+-- Add credit limit and current balance columns if they don't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'customers' 
+        AND column_name = 'credit_limit'
+    ) THEN
+        ALTER TABLE customers ADD COLUMN credit_limit DECIMAL(10,2) DEFAULT 0;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'customers' 
+        AND column_name = 'current_balance'
+    ) THEN
+        ALTER TABLE customers ADD COLUMN current_balance DECIMAL(10,2) DEFAULT 0;
+    END IF;
+END $$;
 
 -- Add check constraints
 ALTER TABLE customers

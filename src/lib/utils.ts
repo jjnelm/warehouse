@@ -15,7 +15,7 @@ export function formatCurrency(value: number): string {
 
 export function formatDate(date: string | Date): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  return format(dateObj, 'MMM d, yyyy');
+  return format(dateObj, 'MMM d, yyyy h:mm a');
 }
 
 export function formatDateTime(date: string | Date): string {

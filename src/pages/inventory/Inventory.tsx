@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, RefreshCw, Plus, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Inventory as InventoryType } from '../../types';
@@ -17,6 +17,7 @@ import {
 import { formatDate, getStockLevelColor } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
+import { format } from 'date-fns';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryType[]>([]);
@@ -24,6 +25,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const { currentTheme } = useTheme(); // Get the current theme
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchInventory();
@@ -36,19 +38,24 @@ const Inventory = () => {
         .from('inventory')
         .select(`
           *,
-          products:product_id(
-            id,
+          products (
             name,
             sku,
+            description,
             minimum_stock,
-            categories:category_id(name)
+            category:category_id (
+              name
+            )
           ),
-          warehouse_locations:location_id(
+          warehouse_locations (
             zone,
             aisle,
             rack,
-            bin
-          )
+            bin,
+            capacity
+          ),
+          created_by_user:profiles!inventory_created_by_fkey(email),
+          updated_by_user:profiles!inventory_updated_by_fkey(email)
         `)
         .order('created_at', { ascending: false });
 
@@ -169,7 +176,11 @@ const Inventory = () => {
                     <TableHead>Location</TableHead>
                     <TableHead>Quantity</TableHead>
                     <TableHead>Min Stock</TableHead>
-                    <TableHead>Last Updated</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Created By</TableHead>
+                    <TableHead>Updated</TableHead>
+                    <TableHead>Updated By</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -210,7 +221,7 @@ const Inventory = () => {
                             currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
                           }`}
                         >
-                          {item.products?.categories?.name}
+                          {item.products?.category?.name}
                         </TableCell>
                         <TableCell
                           className={`${
@@ -246,12 +257,28 @@ const Inventory = () => {
                         >
                           {item.products?.minimum_stock || 0}
                         </TableCell>
-                        <TableCell
-                          className={`${
-                            currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-                          }`}
-                        >
-                          {formatDate(item.created_at)}
+                        <TableCell>
+                          {format(new Date(item.created_at), 'MMM d, yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          {item.created_by_user?.email || 'System'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(item.updated_at), 'MMM d, yyyy HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          {item.updated_by_user?.email || 'System'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/inventory/${item.id}`)}
+                            >
+                              View
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

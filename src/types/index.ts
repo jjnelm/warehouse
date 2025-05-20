@@ -48,16 +48,15 @@ export interface Inventory {
   expiry_date?: string;
   created_at: string;
   updated_at: string;
-  products?: {
-    id: string;
-    name: string;
-    sku: string;
-    description?: string;
-    minimum_stock: number;
-    categories?: {
-      name: string;
-    };
+  created_by?: string;
+  updated_by?: string;
+  created_by_user?: {
+    email: string;
   };
+  updated_by_user?: {
+    email: string;
+  };
+  products?: Product;
   warehouse_locations?: {
     zone: string;
     aisle: string;
@@ -104,6 +103,14 @@ export interface Order {
   items?: OrderItem[];
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+  created_by_user?: {
+    email: string;
+  };
+  updated_by_user?: {
+    email: string;
+  };
   total_amount?: number;
   shipping_method?: string;
   carrier?: string;

@@ -50,9 +50,12 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
 
       const { data: updateData, error } = await supabase
         .from('inventory')
-        .update({ quantity: newQuantity })
+        .update({ 
+          quantity: newQuantity,
+          updated_by: (await supabase.auth.getUser()).data.user?.id
+        })
         .eq('id', inventoryId)
-        .select('id, quantity')
+        .select('id, quantity, updated_by, updated_at')
         .single();
 
       if (error) {
