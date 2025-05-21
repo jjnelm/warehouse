@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Warehouse } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { useTheme } from '../contexts/ThemeContext'; // Import the theme context
+import { useAuthStore } from '../stores/authStore';
 
 interface LoginForm {
   email: string;
@@ -14,25 +15,44 @@ interface LoginForm {
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const { currentTheme } = useTheme(); // Get the current theme
+  const { setUser } = useAuthStore();
+
+  useEffect(() => {
+    // Get redirect URL from query parameters
+    const params = new URLSearchParams(location.search);
+    const redirect = params.get('redirect');
+    if (redirect) {
+      setRedirectTo(redirect);
+    }
+  }, [location]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
       setLoading(true);
       setError('');
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
       
       if (error) throw error;
       
-      navigate('/');
+      if (authData.user) {
+        setUser(authData.user);
+        // Navigate to the redirect URL if it exists, otherwise go to home
+        navigate(redirectTo || '/');
+      } else {
+        throw new Error('No user data received');
+      }
     } catch (error: any) {
+      console.error('Login error:', error);
       setError(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);

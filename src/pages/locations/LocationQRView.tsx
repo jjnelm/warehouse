@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import { AlertTriangle, Package, MapPin } from 'lucide-react';
+import { AlertTriangle, Package, MapPin, Edit } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuthStore } from '../../stores/authStore';
+import Button from '../../components/ui/Button';
+import { toast } from 'react-hot-toast';
 
 interface LocationInventory {
   id: string;
@@ -37,12 +40,14 @@ interface LocationData {
 const LocationQRView = () => {
   const params = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const locationId = params.locationId || params.id;
   const isPublicRoute = location.pathname.startsWith('/l/');
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { currentTheme: isDarkMode } = useTheme();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchLocationData = async () => {
@@ -95,6 +100,16 @@ const LocationQRView = () => {
 
     fetchLocationData();
   }, [locationId]);
+
+  const handleUpdateStock = (inventoryId: string) => {
+    if (!user) {
+      toast.error('Please sign in to update stock');
+      const currentPath = `/inventory/${inventoryId}`;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    navigate(`/inventory/${inventoryId}`);
+  };
 
   if (loading) {
     return (
@@ -230,6 +245,16 @@ const LocationQRView = () => {
                             {item.expiry_date && (
                               <p className="mt-1">Expires: {new Date(item.expiry_date).toLocaleDateString()}</p>
                             )}
+                            <div className="mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                icon={<Edit className="h-4 w-4" />}
+                                onClick={() => handleUpdateStock(item.id)}
+                              >
+                                Update Stock
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>

@@ -7,7 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { toast } from 'react-hot-toast';
-import { useTheme } from '../../contexts/ThemeContext'; // Import the theme context
+import { useTheme } from '../../contexts/ThemeContext';
+import { useAuthStore } from '../../stores/authStore';
 
 interface UpdateStockForm {
   quantity: number;
@@ -24,17 +25,25 @@ interface UpdateStockProps {
 const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { user } = useAuthStore();
   const { register, handleSubmit, formState: { errors }, watch } = useForm<UpdateStockForm>({
     defaultValues: {
       quantity: 0,
       adjustment_type: 'add',
     },
   });
-  const { currentTheme } = useTheme(); // Get the current theme
+  const { currentTheme } = useTheme();
 
   const adjustmentType = watch('adjustment_type');
 
   const onSubmit = async (data: UpdateStockForm) => {
+    if (!user) {
+      toast.error('Please sign in to update stock');
+      const currentPath = window.location.pathname + window.location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -52,7 +61,7 @@ const UpdateStock = ({ inventoryId, currentQuantity, onSuccess }: UpdateStockPro
         .from('inventory')
         .update({ 
           quantity: newQuantity,
-          updated_by: (await supabase.auth.getUser()).data.user?.id
+          updated_by: user.id
         })
         .eq('id', inventoryId)
         .select('id, quantity, updated_by, updated_at')
