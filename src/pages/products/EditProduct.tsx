@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Product, Category } from '../../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -15,6 +15,8 @@ const EditProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -23,6 +25,7 @@ const EditProduct = () => {
     category_id: '',
     unit_price: '',
     minimum_stock: '',
+    image_url: '',
   });
   const { currentTheme } = useTheme(); // Get the current theme
 
@@ -64,7 +67,9 @@ const EditProduct = () => {
         category_id: data.category_id,
         unit_price: data.unit_price.toString(),
         minimum_stock: data.minimum_stock.toString(),
+        image_url: data.image_url || '',
       });
+      setImagePreview(data.image_url || null);
     } catch (error) {
       console.error('Error fetching product:', error);
       toast.error('Failed to fetch product details');
@@ -72,6 +77,77 @@ const EditProduct = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to upload images');
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      setUploading(true);
+
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = fileName;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found')) {
+          toast.error('Storage bucket not found. Please contact support.');
+        } else if (uploadError.message.includes('violates row-level security policy')) {
+          toast.error('You do not have permission to upload images. Please log in.');
+        } else {
+          toast.error('Failed to upload image: ' + uploadError.message);
+        }
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      // Update form data with new image URL
+      setFormData(prev => ({ ...prev, image_url: publicUrl }));
+      setImagePreview(publicUrl);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, image_url: '' }));
+    setImagePreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +164,7 @@ const EditProduct = () => {
           category_id: formData.category_id,
           unit_price: Number(formData.unit_price),
           minimum_stock: Number(formData.minimum_stock),
+          image_url: formData.image_url || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
@@ -280,6 +357,75 @@ const EditProduct = () => {
                       currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                     }`}
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <label className={`block text-sm font-medium ${
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                  } mb-2`}>
+                    Product Image
+                  </label>
+                  <div className="mt-1 flex items-center gap-4">
+                    <div className="flex-shrink-0">
+                      {imagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Product preview"
+                            className="h-32 w-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeImage}
+                            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <Upload className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-grow">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload"
+                        disabled={uploading}
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 ${
+                          uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
+                      >
+                        {uploading ? 'Uploading...' : 'Upload Image'}
+                      </label>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Upload a product image (max 5MB, JPG, PNG, GIF)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <Input
+                    label="Image URL (Optional)"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleChange}
+                    placeholder="https://example.com/image.jpg"
+                    className={`mt-1 ${
+                      currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                    }`}
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Or enter a URL to an image of the product. The image should be publicly accessible.
+                  </p>
                 </div>
               </div>
             </CardContent>

@@ -9,16 +9,24 @@ import Select from '../../components/ui/Select';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../../contexts/ThemeContext';
 
-interface UpdateLocationForm {
-  location_id: string;
-}
-
 interface Location {
   id: string;
   zone: string;
   aisle: string;
   rack: string;
   bin: string;
+  capacity: number;
+  current_usage: number;
+  location_type: string;
+  rotation_method: string;
+  notes?: string;
+}
+
+interface UpdateLocationForm {
+  location_id: string;
+  location_type: string;
+  rotation_method: string;
+  notes: string;
 }
 
 interface UpdateLocationProps {
@@ -32,7 +40,13 @@ const UpdateLocation = ({ inventoryId, currentLocationId, onSuccess }: UpdateLoc
   const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
   const { currentTheme } = useTheme();
-  const { register, handleSubmit, formState: { errors } } = useForm<UpdateLocationForm>();
+  const { register, handleSubmit, formState: { errors } } = useForm<UpdateLocationForm>({
+    defaultValues: {
+      location_type: 'Standard',
+      rotation_method: 'FIFO',
+      notes: ''
+    }
+  });
 
   useEffect(() => {
     fetchLocations();
@@ -42,7 +56,7 @@ const UpdateLocation = ({ inventoryId, currentLocationId, onSuccess }: UpdateLoc
     try {
       const { data, error } = await supabase
         .from('warehouse_locations')
-        .select('id, zone, aisle, rack, bin')
+        .select('id, zone, aisle, rack, bin, capacity, current_usage, location_type, rotation_method, notes')
         .order('zone, aisle, rack, bin');
 
       if (error) throw error;
@@ -59,7 +73,12 @@ const UpdateLocation = ({ inventoryId, currentLocationId, onSuccess }: UpdateLoc
       
       const { error } = await supabase
         .from('inventory')
-        .update({ location_id: data.location_id })
+        .update({ 
+          location_id: data.location_id,
+          location_type: data.location_type,
+          rotation_method: data.rotation_method,
+          notes: data.notes
+        })
         .eq('id', inventoryId);
 
       if (error) throw error;
@@ -112,6 +131,43 @@ const UpdateLocation = ({ inventoryId, currentLocationId, onSuccess }: UpdateLoc
                 required: 'Location is required',
               })}
             />
+
+            <Select
+              label="Location Type"
+              options={[
+                { value: 'Standard', label: 'Standard' },
+                { value: 'Bulk', label: 'Bulk Storage' },
+                { value: 'Picking', label: 'Picking Area' },
+                { value: 'Receiving', label: 'Receiving Area' },
+                { value: 'Shipping', label: 'Shipping Area' }
+              ]}
+              error={errors.location_type?.message}
+              {...register('location_type')}
+            />
+
+            <Select
+              label="Rotation Method"
+              options={[
+                { value: 'FIFO', label: 'First In, First Out (FIFO)' },
+                { value: 'LIFO', label: 'Last In, First Out (LIFO)' },
+                { value: 'FEFO', label: 'First Expired, First Out (FEFO)' }
+              ]}
+              error={errors.rotation_method?.message}
+              {...register('rotation_method')}
+            />
+
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="Enter any additional notes"
+                {...register('notes')}
+              />
+            </div>
 
             <div className="flex justify-end">
               <Button type="submit" isLoading={loading}>

@@ -80,6 +80,9 @@ export interface Database {
           bin: string
           capacity: number
           reserved: boolean
+          location_type: string
+          rotation_method: string
+          notes: string | null
         }
         Insert: {
           id?: string
@@ -90,6 +93,9 @@ export interface Database {
           bin: string
           capacity: number
           reserved?: boolean
+          location_type?: string
+          rotation_method?: string
+          notes?: string | null
         }
         Update: {
           id?: string
@@ -100,6 +106,9 @@ export interface Database {
           bin?: string
           capacity?: number
           reserved?: boolean
+          location_type?: string
+          rotation_method?: string
+          notes?: string | null
         }
       }
       inventory: {

@@ -34,9 +34,17 @@ export interface WarehouseLocation {
   rack: string;
   bin: string;
   capacity: number;
+  current_usage: number;
+  location_type: string;
+  rotation_method: string;
+  notes?: string;
   reserved: boolean;
   created_at: string;
-  available_capacity?: number;
+  updated_at: string;
+  last_movement?: {
+    date: string;
+    user: string;
+  };
 }
 
 export interface Inventory {
@@ -63,6 +71,9 @@ export interface Inventory {
     rack: string;
     bin: string;
     capacity: number;
+    location_type: string;
+    rotation_method: string;
+    notes?: string;
   };
 }
 

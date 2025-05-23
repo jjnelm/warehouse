@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit, RefreshCw, Package } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Inventory } from '../../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -43,7 +43,8 @@ const InventoryDetail = () => {
             minimum_stock,
             category:category_id (
               name
-            )
+            ),
+            image_url
           ),
           warehouse_locations (
             zone,
@@ -260,6 +261,21 @@ const InventoryDetail = () => {
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4">
+              <div className="sm:col-span-2">
+                {inventory.products?.image_url ? (
+                  <div className="mb-4">
+                    <img
+                      src={inventory.products.image_url}
+                      alt={inventory.products.name}
+                      className="h-48 w-48 object-cover rounded-lg"
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-4 h-48 w-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <Package className="h-16 w-16 text-gray-400" />
+                  </div>
+                )}
+              </div>
               <div>
                 <dt className="text-sm font-medium">
                   SKU

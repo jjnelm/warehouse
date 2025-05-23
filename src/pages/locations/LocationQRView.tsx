@@ -21,6 +21,7 @@ interface LocationInventory {
     sku: string;
     unit_price: number;
     minimum_stock: number;
+    image_url: string | null;
     category: {
       name: string;
     };
@@ -73,6 +74,7 @@ const LocationQRView = () => {
                 sku,
                 unit_price,
                 minimum_stock,
+                image_url,
                 category:category_id (
                   name
                 )
@@ -230,6 +232,19 @@ const LocationQRView = () => {
                       >
                         <div className="grid grid-cols-2 gap-4">
                           <div>
+                            {item.products?.image_url ? (
+                              <div className="mb-3">
+                                <img
+                                  src={item.products.image_url}
+                                  alt={item.products?.name || 'Product image'}
+                                  className="h-32 w-32 object-cover rounded-lg"
+                                />
+                              </div>
+                            ) : (
+                              <div className="mb-3 h-32 w-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <Package className="h-12 w-12 text-gray-400" />
+                              </div>
+                            )}
                             <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Product</p>
                             <p className="mt-1 font-medium">{item.products?.name || 'Unknown Product'}</p>
                             <p className="text-sm text-gray-500">SKU: {item.products?.sku || 'N/A'}</p>

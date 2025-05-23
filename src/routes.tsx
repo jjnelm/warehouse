@@ -29,6 +29,7 @@ import Shipments from './pages/shipments/Shipments';
 import ShipmentDetail from './pages/shipments/ShipmentDetail';
 import NewShipment from './pages/shipments/NewShipment';
 import ProductQRView from './pages/products/ProductQRView';
+import EditLocation from './pages/locations/EditLocation';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuthStore();
@@ -60,6 +61,7 @@ const AppRoutes = () => {
           <Route path="/inventory/:id" element={<InventoryDetail />} />
           <Route path="/locations" element={<Locations />} />
           <Route path="/locations/add" element={<AddLocation />} />
+          <Route path="/locations/:id/edit" element={<EditLocation />} />
           <Route path="/locations/:id/qr" element={<LocationQRView />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/orders/create" element={<CreateOrder />} />

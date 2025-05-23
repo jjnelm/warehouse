@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card from '../../components/ui/Card';
+import Select from '../../components/ui/Select';
 
 export default function AddLocation() {
   const navigate = useNavigate();
@@ -16,9 +17,14 @@ export default function AddLocation() {
     rack: '',
     bin: '',
     capacity: '',
+    location_type: 'Standard',
+    rotation_method: 'FIFO',
+    notes: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -40,6 +46,9 @@ export default function AddLocation() {
             rack: formData.rack,
             bin: formData.bin,
             capacity: parseInt(formData.capacity),
+            location_type: formData.location_type,
+            rotation_method: formData.rotation_method,
+            notes: formData.notes,
             reserved: false
           }
         ]);
@@ -70,13 +79,17 @@ export default function AddLocation() {
               <label htmlFor="zone" className="block text-sm font-medium text-gray-700">
                 Zone
               </label>
-              <Input
+              <Select
                 id="zone"
                 name="zone"
                 value={formData.zone}
                 onChange={handleChange}
-                required
-                placeholder="Enter zone"
+                options={[
+                  { value: 'Zone1', label: 'Zone1' },
+                  { value: 'Zone2', label: 'Zone2' },
+                  { value: 'Zone3', label: 'Zone3' },
+                  { value: 'Zone4', label: 'Zone4' },
+                ]}
                 className="mt-1"
               />
             </div>
@@ -85,13 +98,17 @@ export default function AddLocation() {
               <label htmlFor="aisle" className="block text-sm font-medium text-gray-700">
                 Aisle
               </label>
-              <Input
+              <Select
                 id="aisle"
                 name="aisle"
                 value={formData.aisle}
                 onChange={handleChange}
-                required
-                placeholder="Enter aisle"
+                options={[
+                  { value: 'Aisle1', label: 'Aisle1' },
+                  { value: 'Aisle2', label: 'Aisle2' },
+                  { value: 'Aisle3', label: 'Aisle3' },
+                  { value: 'Aisle4', label: 'Aisle4' },
+                ]}
                 className="mt-1"
               />
             </div>
@@ -100,13 +117,17 @@ export default function AddLocation() {
               <label htmlFor="rack" className="block text-sm font-medium text-gray-700">
                 Rack
               </label>
-              <Input
+              <Select
                 id="rack"
                 name="rack"
                 value={formData.rack}
                 onChange={handleChange}
-                required
-                placeholder="Enter rack"
+                options={[
+                  { value: 'Rack1', label: 'Rack1' },
+                  { value: 'Rack2', label: 'Rack2' },
+                  { value: 'Rack3', label: 'Rack3' },
+                  { value: 'Rack4', label: 'Rack4' },
+                ]}
                 className="mt-1"
               />
             </div>
@@ -115,20 +136,24 @@ export default function AddLocation() {
               <label htmlFor="bin" className="block text-sm font-medium text-gray-700">
                 Bin
               </label>
-              <Input
+              <Select
                 id="bin"
                 name="bin"
                 value={formData.bin}
                 onChange={handleChange}
-                required
-                placeholder="Enter bin"
+                options={[
+                  { value: 'Bin1', label: 'Bin1' },
+                  { value: 'Bin2', label: 'Bin2' },
+                  { value: 'Bin3', label: 'Bin3' },
+                  { value: 'Bin4', label: 'Bin4' },
+                ]}
                 className="mt-1"
               />
             </div>
 
             <div>
               <label htmlFor="capacity" className="block text-sm font-medium text-gray-700">
-                Capacity
+                Max Capacity
               </label>
               <Input
                 id="capacity"
@@ -137,8 +162,58 @@ export default function AddLocation() {
                 value={formData.capacity}
                 onChange={handleChange}
                 required
-                placeholder="Enter capacity"
+                placeholder="Enter max capacity"
                 className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="location_type" className="block text-sm font-medium text-gray-700">
+                Location Type
+              </label>
+              <Select
+                id="location_type"
+                name="location_type"
+                value={formData.location_type}
+                onChange={handleChange}
+                options={[
+                  { value: 'Fixed', label: 'Fixed' },
+                  { value: 'Dynamic', label: 'Dynamic' },
+                ]}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="rotation_method" className="block text-sm font-medium text-gray-700">
+                Rotation Method
+              </label>
+              <Select
+                id="rotation_method"
+                name="rotation_method"
+                value={formData.rotation_method}
+                onChange={handleChange}
+                options={[
+                  { value: 'FIFO', label: 'First In, First Out (FIFO)' },
+                  { value: 'LIFO', label: 'Last In, First Out (LIFO)' },
+                  { value: 'FEFO', label: 'First Expired, First Out (FEFO)' }
+                ]}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                placeholder="Enter any additional notes"
               />
             </div>
           </div>

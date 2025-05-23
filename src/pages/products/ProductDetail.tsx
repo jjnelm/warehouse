@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Archive, Trash, RefreshCw, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Edit, Archive, Trash, RefreshCw, AlertTriangle, Package } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../../lib/supabase';
 import { Product, Inventory } from '../../types';
@@ -204,21 +204,28 @@ const ProductDetail = () => {
 
   return (
     <div
-      className={`animate-fade-in ${
+      className={`animate-fade-in min-h-screen ${
         currentTheme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
       }`}
     >
-      <div className="mb-6 flex items-center justify-between">
+      {/* Header Section */}
+      <div className="mb-8 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
             size="sm"
             icon={<ArrowLeft className="h-4 w-4" />}
             onClick={() => navigate('/products')}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             Back
           </Button>
-          <h1 className="text-2xl font-bold">{product.name}</h1>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              SKU: {product.sku}
+            </p>
+          </div>
         </div>
         <div className="flex space-x-3">
           <Button
@@ -226,6 +233,7 @@ const ProductDetail = () => {
             size="sm"
             icon={<Edit className="h-4 w-4" />}
             onClick={handleEdit}
+            className="hover:bg-primary-50 dark:hover:bg-primary-900"
           >
             Edit
           </Button>
@@ -235,6 +243,7 @@ const ProductDetail = () => {
             icon={<Archive className="h-4 w-4" />}
             onClick={() => setArchiveModalOpen(true)}
             disabled={isProcessing}
+            className="hover:bg-yellow-50 dark:hover:bg-yellow-900"
           >
             {product.archived ? 'Unarchive' : 'Archive'}
           </Button>
@@ -250,55 +259,40 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Product Information */}
+        <div className="lg:col-span-2 space-y-6">
         <Card
           className={`${
             currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-          }`}
+            } shadow-sm hover:shadow-md transition-shadow duration-200`}
         >
-          <CardHeader>
-            <CardTitle>Product Details</CardTitle>
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-xl font-semibold">Product Information</CardTitle>
           </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm font-medium">
-                  SKU
-                </dt>
-                <dd className="mt-1">
-                  {product.sku}
-                </dd>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Category</dt>
+                    <dd className="mt-1 text-lg font-medium">{product.category?.name}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium">
-                  Category
-                </dt>
-                <dd className="mt-1">
-                  {product.category?.name}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium">
-                  Unit Price
-                </dt>
-                <dd className="mt-1">
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Unit Price</dt>
+                    <dd className="mt-1 text-lg font-medium text-primary-600 dark:text-primary-400">
                   {formatCurrency(product.unit_price)}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium">
-                  Minimum Stock
-                </dt>
-                <dd className="mt-1">
-                  {product.minimum_stock}
-                </dd>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Minimum Stock</dt>
+                    <dd className="mt-1 text-lg font-medium">{product.minimum_stock}</dd>
+                  </div>
               </div>
+                <div className="space-y-6">
               <div>
-                <dt className="text-sm font-medium">
-                  Current Stock
-                </dt>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Stock</dt>
                 <dd className="mt-1 flex items-center gap-2">
-                  <span className={getStockLevelColor(totalStock, product.minimum_stock)}>
+                      <span className={`text-lg font-medium ${getStockLevelColor(totalStock, product.minimum_stock)}`}>
                     {totalStock}
                   </span>
                   {isLowStock && (
@@ -316,12 +310,10 @@ const ProductDetail = () => {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium">
-                  Status
-                </dt>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</dt>
                 <dd className="mt-1">
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
                       product.archived
                         ? currentTheme === 'dark'
                           ? 'bg-gray-700 text-gray-300'
@@ -336,108 +328,187 @@ const ProductDetail = () => {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium">
-                  Created
-                </dt>
-                <dd className="mt-1">
-                  {formatDate(product.created_at)}
-                </dd>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</dt>
+                    <dd className="mt-1 text-lg font-medium">{formatDate(product.created_at)}</dd>
+                  </div>
+                </div>
               </div>
-            </dl>
           </CardContent>
         </Card>
 
-        <div className="grid gap-6">
+          {/* Description Card */}
           <Card
             className={`${
               currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-            }`}
+            } shadow-sm hover:shadow-md transition-shadow duration-200`}
           >
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-xl font-semibold">Description</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p>
+            <CardContent className="pt-6">
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 {product.description || 'No description available.'}
               </p>
             </CardContent>
           </Card>
 
+          {/* Inventory Locations Card */}
           <Card
             className={`${
               currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-            }`}
+            } shadow-sm hover:shadow-md transition-shadow duration-200`}
           >
-            <CardHeader>
-              <CardTitle>Inventory Locations</CardTitle>
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-xl font-semibold">Inventory Locations</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {inventory.length > 0 ? (
-                <div className="space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Zone/Area</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SKU/Item Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Item Description</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Quantity</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Location Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Max Capacity</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rotation Method</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last Movement</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Notes</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {inventory.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-lg border p-4 ${
-                        currentTheme === 'dark'
-                          ? 'border-gray-700 bg-gray-800'
-                          : 'border-gray-200 bg-white'
-                      }`}
-                    >
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <dt className="text-sm font-medium">Location</dt>
-                          <dd className="mt-1 flex items-center justify-between">
-                            <span>
+                        <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                               {item.warehouse_locations &&
                                 `${item.warehouse_locations.zone}-${item.warehouse_locations.aisle}-${item.warehouse_locations.rack}-${item.warehouse_locations.bin}`}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {item.warehouse_locations?.zone}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {product.sku}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {product.name}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            {item.quantity}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              item.quantity === 0
+                                ? currentTheme === 'dark'
+                                  ? 'bg-gray-700 text-gray-300'
+                                  : 'bg-gray-100 text-gray-800'
+                                : item.quantity > (item.warehouse_locations?.capacity || 0)
+                                ? currentTheme === 'dark'
+                                  ? 'bg-red-900 text-red-300'
+                                  : 'bg-red-100 text-red-800'
+                                : item.quantity < ((item.warehouse_locations?.capacity || 0) * 0.2)
+                                ? currentTheme === 'dark'
+                                  ? 'bg-yellow-900 text-yellow-300'
+                                  : 'bg-yellow-100 text-yellow-800'
+                                : currentTheme === 'dark'
+                                ? 'bg-green-900 text-green-300'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {item.quantity === 0
+                                ? 'Out of Stock'
+                                : item.quantity > (item.warehouse_locations?.capacity || 0)
+                                ? 'Over Stock'
+                                : item.quantity < ((item.warehouse_locations?.capacity || 0) * 0.2)
+                                ? 'Low on Stock'
+                                : 'In Stock'}
                             </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {item.warehouse_locations?.location_type || 'Standard'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {item.warehouse_locations?.capacity || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {item.warehouse_locations?.rotation_method || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {formatDate(item.updated_at)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            {item.warehouse_locations?.notes || 'No notes'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
                             <Button
                               variant="ghost"
                               size="sm"
                               icon={<Edit className="h-4 w-4" />}
                               onClick={() => setEditingInventoryId(item.id)}
+                              className="hover:bg-gray-100 dark:hover:bg-gray-700"
                             >
                               Edit
                             </Button>
-                          </dd>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                         </div>
-                        <div>
-                          <dt className="text-sm font-medium">Quantity</dt>
-                          <dd className="mt-1">{item.quantity}</dd>
-                        </div>
-                        {item.lot_number && (
-                          <div>
-                            <dt className="text-sm font-medium">Lot Number</dt>
-                            <dd className="mt-1">{item.lot_number}</dd>
+              ) : (
+                <div className={`text-center py-8 ${
+                  currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p className="text-lg font-medium mb-1">No Inventory Items</p>
+                  <p className="text-sm">No inventory items found for this product.</p>
                           </div>
                         )}
-                        {item.expiry_date && (
-                          <div>
-                            <dt className="text-sm font-medium">Expiry Date</dt>
-                            <dd className="mt-1">{formatDate(item.expiry_date)}</dd>
+            </CardContent>
+          </Card>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Product Image Card */}
+          <Card
+            className={`${
+              currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+            } shadow-sm hover:shadow-md transition-shadow duration-200`}
+          >
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-xl font-semibold">Product Image</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {product.image_url ? (
+                <div className="aspect-square overflow-hidden rounded-lg">
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               ) : (
-                <p className={`text-center ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                  No inventory items found for this product.
-                </p>
+                <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                  <Package className="h-16 w-16 text-gray-400" />
+                </div>
               )}
             </CardContent>
           </Card>
 
+          {/* QR Code Card */}
           <Card
             className={`${
               currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-            }`}
+            } shadow-sm hover:shadow-md transition-shadow duration-200`}
           >
-            <CardHeader>
-              <CardTitle>Product QR Code</CardTitle>
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-xl font-semibold">Product QR Code</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="flex flex-col items-center justify-center p-4">
                 <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                   <QRCodeSVG
@@ -449,7 +520,7 @@ const ProductDetail = () => {
                     fgColor="#000000"
                   />
                 </div>
-                <p className="text-sm text-gray-500 text-center">
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
                   Scan this QR code to view product details
                   <br />
                   Works on all devices without login
@@ -460,6 +531,7 @@ const ProductDetail = () => {
         </div>
       </div>
 
+      {/* Modals */}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
