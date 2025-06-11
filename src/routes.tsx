@@ -30,6 +30,8 @@ import ShipmentDetail from './pages/shipments/ShipmentDetail';
 import NewShipment from './pages/shipments/NewShipment';
 import ProductQRView from './pages/products/ProductQRView';
 import EditLocation from './pages/locations/EditLocation';
+import QRScanner from './pages/QRScanner';
+import QRCodeMenu from './pages/QRCodeMenu';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuthStore();
@@ -76,6 +78,8 @@ const AppRoutes = () => {
           <Route path="/shipments" element={<Shipments />} />
           <Route path="/shipments/new" element={<NewShipment />} />
           <Route path="/shipments/:id" element={<ShipmentDetail />} />
+          <Route path="/scanner" element={<QRScanner />} />
+          <Route path="/qr-codes" element={<QRCodeMenu />} />
         </Route>
         
         {/* Catch all route */}

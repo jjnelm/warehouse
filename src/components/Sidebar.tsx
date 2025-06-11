@@ -12,7 +12,8 @@ import {
   X,
   Store,
   MapPin,
-  Truck // Import the Truck icon for Shipments
+  Truck,
+  QrCode
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -34,6 +35,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     { name: 'Customers', href: '/customers', icon: Users },
     { name: 'Suppliers', href: '/suppliers', icon: Store },
     { name: 'Locations', href: '/locations', icon: MapPin },
+    { name: 'QR Codes', href: '/qr-codes', icon: QrCode },
     { name: 'Reports', href: '/reports', icon: BarChart },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
