@@ -1,25 +1,34 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
   currentTheme: 'light' | 'dark';
-  toggleTheme: () => void;
+  primaryColor: string;
   setTheme: (theme: Theme) => void;
+  setPrimaryColor: (color: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = 'theme-storage';
+const DEFAULT_PRIMARY_COLOR = '#6366F1'; // Indigo-500
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize theme from localStorage or default to 'system'
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    return (stored as Theme) || 'system';
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as Theme) || 'system';
+    }
+    return 'system';
   });
-  
+
+  const [primaryColor, setPrimaryColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('primaryColor') || DEFAULT_PRIMARY_COLOR;
+    }
+    return DEFAULT_PRIMARY_COLOR;
+  });
+
   // Determine the actual theme based on system preference if theme is 'system'
   const currentTheme = theme === 'system'
     ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -27,24 +36,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       : 'light'
     : theme as 'light' | 'dark';
 
-  // Update localStorage when theme changes
   useEffect(() => {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(currentTheme);
+    localStorage.setItem('theme', theme);
+  }, [theme, currentTheme]);
 
-  // Update document class for global styles
   useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(currentTheme);
-  }, [currentTheme]);
+    const root = window.document.documentElement;
+    root.style.setProperty('--color-primary', primaryColor);
+    localStorage.setItem('primaryColor', primaryColor);
+  }, [primaryColor]);
 
   // Listen for system theme changes
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
       if (theme === 'system') {
-        document.documentElement.classList.remove('light', 'dark');
-        document.documentElement.classList.add(
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(
           mediaQuery.matches ? 'dark' : 'light'
         );
       }
@@ -54,16 +66,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-  };
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, currentTheme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, currentTheme, primaryColor, setTheme, setPrimaryColor }}>
       {children}
     </ThemeContext.Provider>
   );

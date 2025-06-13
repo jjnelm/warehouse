@@ -6,6 +6,9 @@ import AppRoutes from './routes';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './lib/supabase';
 import { useAuthStore } from './stores/authStore';
+import { ThemeSwitcher } from './components/ThemeSwitcher';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './routes';
 
 function App() {
   const { setUser, clearUser } = useAuthStore();
@@ -33,14 +36,12 @@ function App() {
   }, [setUser, clearUser]);
 
   return (
-    <Router>
-      <ThemeProvider>
-        {/* <AuthProvider> */}
-          <AppRoutes />
-          <Toaster position="top-right" />
-        {/* </AuthProvider> */}
-      </ThemeProvider>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AppRoutes />
+        <Toaster position="top-right" />
+      </Router>
+    </ThemeProvider>
   );
 }
 

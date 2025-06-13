@@ -3,27 +3,16 @@ CREATE OR REPLACE FUNCTION update_inventory_on_order_completion()
 RETURNS TRIGGER AS $$
 DECLARE
   order_item RECORD;
-  default_location_id UUID;
+  target_location_id UUID;
   order_items_count INTEGER;
+  existing_inventory RECORD;
 BEGIN
   -- Log the trigger execution
   RAISE NOTICE 'Trigger fired for order %: type=%, old_status=%, new_status=%', 
     NEW.id, NEW.order_type, OLD.status, NEW.status;
 
-  -- Only process inbound orders
-  IF NEW.order_type = 'inbound' AND NEW.status = 'completed' AND OLD.status != 'completed' THEN
-    -- Get default location (first available location)
-    SELECT id INTO default_location_id 
-    FROM warehouse_locations 
-    WHERE reserved = false 
-    LIMIT 1;
-
-    IF default_location_id IS NULL THEN
-      RAISE EXCEPTION 'No available warehouse location found';
-    END IF;
-
-    RAISE NOTICE 'Using warehouse location: %', default_location_id;
-
+  -- Only process outbound orders
+  IF NEW.order_type = 'outbound' AND NEW.status = 'completed' AND OLD.status != 'completed' THEN
     -- Count order items
     SELECT COUNT(*) INTO order_items_count
     FROM order_items 
@@ -33,41 +22,54 @@ BEGIN
 
     -- Loop through all items in the order
     FOR order_item IN 
-      SELECT product_id, quantity 
-      FROM order_items 
-      WHERE order_id = NEW.id
+      SELECT 
+        oi.product_id,
+        oi.quantity,
+        pli.location_id as assigned_location_id
+      FROM order_items oi
+      LEFT JOIN pick_lists pl ON pl.order_id = oi.order_id
+      LEFT JOIN pick_list_items pli ON pli.pick_list_id = pl.id AND pli.product_id = oi.product_id
+      WHERE oi.order_id = NEW.id
     LOOP
-      RAISE NOTICE 'Processing item: product_id=%, quantity=%', 
-        order_item.product_id, order_item.quantity;
+      RAISE NOTICE 'Processing item: product_id=%, quantity=%, location_id=%', 
+        order_item.product_id, order_item.quantity, order_item.assigned_location_id;
+
+      -- Use the location from pick list items if available
+      target_location_id := order_item.assigned_location_id;
+
+      -- If no location is assigned, get the first available location
+      IF target_location_id IS NULL THEN
+        SELECT id INTO target_location_id
+        FROM warehouse_locations 
+        WHERE reserved = false 
+        LIMIT 1;
+
+        IF target_location_id IS NULL THEN
+          RAISE EXCEPTION 'No available warehouse location found';
+        END IF;
+      END IF;
+
+      RAISE NOTICE 'Using warehouse location: %', target_location_id;
 
       -- Check if product exists in inventory for this location
-      IF EXISTS (
-        SELECT 1 FROM inventory 
-        WHERE product_id = order_item.product_id
-        AND location_id = default_location_id
-      ) THEN
+      SELECT * INTO existing_inventory
+      FROM inventory inv
+      WHERE inv.product_id = order_item.product_id
+      AND inv.location_id = target_location_id
+      AND inv.lot_number IS NULL
+      LIMIT 1;
+
+      IF existing_inventory IS NOT NULL THEN
         -- Update existing inventory
-        UPDATE inventory
-        SET quantity = quantity + order_item.quantity
-        WHERE product_id = order_item.product_id
-        AND location_id = default_location_id;
+        UPDATE inventory inv
+        SET quantity = inv.quantity - order_item.quantity
+        WHERE inv.id = existing_inventory.id;
 
-        RAISE NOTICE 'Updated existing inventory for product % at location %: added % units', 
-          order_item.product_id, default_location_id, order_item.quantity;
+        RAISE NOTICE 'Updated existing inventory for product % at location %: deducted % units', 
+          order_item.product_id, target_location_id, order_item.quantity;
       ELSE
-        -- Insert new inventory record
-        INSERT INTO inventory (
-          product_id,
-          location_id,
-          quantity
-        ) VALUES (
-          order_item.product_id,
-          default_location_id,
-          order_item.quantity
-        );
-
-        RAISE NOTICE 'Created new inventory record for product % at location %: % units', 
-          order_item.product_id, default_location_id, order_item.quantity;
+        RAISE EXCEPTION 'No inventory found for product % at location %', 
+          order_item.product_id, target_location_id;
       END IF;
     END LOOP;
   ELSE

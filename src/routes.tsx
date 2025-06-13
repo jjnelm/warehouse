@@ -32,6 +32,8 @@ import ProductQRView from './pages/products/ProductQRView';
 import EditLocation from './pages/locations/EditLocation';
 import QRScanner from './pages/QRScanner';
 import QRCodeMenu from './pages/QRCodeMenu';
+import PickLists from './pages/pick-lists/PickLists';
+import PickListDetail from './pages/pick-lists/PickListDetail';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuthStore();
@@ -80,6 +82,8 @@ const AppRoutes = () => {
           <Route path="/shipments/:id" element={<ShipmentDetail />} />
           <Route path="/scanner" element={<QRScanner />} />
           <Route path="/qr-codes" element={<QRCodeMenu />} />
+          <Route path="/pick-lists" element={<PickLists />} />
+          <Route path="/pick-lists/:id" element={<PickListDetail />} />
         </Route>
         
         {/* Catch all route */}

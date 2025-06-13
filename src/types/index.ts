@@ -29,22 +29,18 @@ export interface Category {
 
 export interface WarehouseLocation {
   id: string;
+  name: string;
   zone: string;
   aisle: string;
   rack: string;
   bin: string;
   capacity: number;
-  current_usage: number;
+  reserved: boolean;
   location_type: string;
   rotation_method: string;
   notes?: string;
-  reserved: boolean;
   created_at: string;
   updated_at: string;
-  last_movement?: {
-    date: string;
-    user: string;
-  };
 }
 
 export interface Inventory {
@@ -184,4 +180,43 @@ export interface DashboardMetrics {
     action: string;
     details: string;
   }>;
+}
+
+export type PickListStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type PickListItemStatus = 'pending' | 'picked' | 'partial' | 'cancelled';
+
+export interface PickList {
+  id: string;
+  pick_list_number: string;
+  order_id: string;
+  order?: Order;
+  status: PickListStatus;
+  assigned_to?: string;
+  assigned_to_user?: {
+    email: string;
+  };
+  completed_at?: string;
+  notes?: string;
+  created_by: string;
+  created_by_user?: {
+    email: string;
+  };
+  created_at: string;
+  updated_at: string;
+  items?: PickListItem[];
+}
+
+export interface PickListItem {
+  id: string;
+  pick_list_id: string;
+  product_id: string;
+  location_id: string;
+  quantity: number;
+  quantity_picked: number;
+  notes?: string;
+  status: 'pending' | 'in_progress' | 'picked' | 'partial';
+  product?: Product;
+  location?: WarehouseLocation;
+  created_at: string;
+  updated_at: string;
 }

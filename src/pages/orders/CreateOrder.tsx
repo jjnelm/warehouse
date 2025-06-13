@@ -29,12 +29,21 @@ interface CreateOrderForm {
   }[];
 }
 
+interface FormOrderItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+}
+
 export default function CreateOrder() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [orderItems, setOrderItems] = useState<FormOrderItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm<CreateOrderForm>({
     defaultValues: {
@@ -89,6 +98,29 @@ export default function CreateOrder() {
   const onSubmit = async (data: CreateOrderForm) => {
     try {
       setLoading(true);
+
+      // For outbound orders, check stock availability for all items
+      if (data.order_type === 'outbound') {
+        for (const item of data.items) {
+          const { data: inventoryData, error: inventoryError } = await supabase
+            .from('inventory')
+            .select('quantity, id')
+            .eq('product_id', item.product_id)
+            .order('created_at', { ascending: true }); // FIFO order
+
+          if (inventoryError) {
+            toast.error('Failed to check stock availability');
+            return;
+          }
+
+          const availableStock = inventoryData?.reduce((sum, inv) => sum + inv.quantity, 0) || 0;
+          if (item.quantity > availableStock) {
+            const product = products.find(p => p.id === item.product_id);
+            toast.error(`Insufficient stock for ${product?.name || 'product'}. Only ${availableStock} units available.`);
+            return;
+          }
+        }
+      }
 
       // Generate order number (format: ORD-YYYYMMDD-XXXX)
       const date = new Date();
@@ -152,6 +184,39 @@ export default function CreateOrder() {
 
       if (itemsError) throw itemsError;
 
+      // For outbound orders, deduct stock from inventory
+      if (data.order_type === 'outbound') {
+        for (const item of data.items) {
+          let remainingQuantity = item.quantity;
+          
+          // Get inventory items ordered by creation date (FIFO)
+          const { data: inventoryData, error: inventoryError } = await supabase
+            .from('inventory')
+            .select('id, quantity')
+            .eq('product_id', item.product_id)
+            .order('created_at', { ascending: true });
+
+          if (inventoryError) throw inventoryError;
+
+          // Deduct stock from each inventory item until we've satisfied the order quantity
+          for (const inventory of inventoryData || []) {
+            if (remainingQuantity <= 0) break;
+
+            const deductionAmount = Math.min(remainingQuantity, inventory.quantity);
+            const newQuantity = inventory.quantity - deductionAmount;
+
+            const { error: updateError } = await supabase
+              .from('inventory')
+              .update({ quantity: newQuantity })
+              .eq('id', inventory.id);
+
+            if (updateError) throw updateError;
+
+            remainingQuantity -= deductionAmount;
+          }
+        }
+      }
+
       toast.success('Order created successfully');
       navigate(`/orders/${order.id}`);
     } catch (error) {
@@ -160,6 +225,41 @@ export default function CreateOrder() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAddItem = async () => {
+    if (!selectedProduct || !quantity) return;
+
+    // Check if product already exists in the order
+    if (orderItems.some(item => item.product_id === selectedProduct.id)) {
+      toast.error('This product is already in the order');
+      return;
+    }
+
+    // Check available stock from inventory
+    const { data: inventoryData, error: inventoryError } = await supabase
+      .from('inventory')
+      .select('quantity')
+      .eq('product_id', selectedProduct.id);
+
+    if (inventoryError) {
+      toast.error('Failed to check stock availability');
+      return;
+    }
+
+    const availableStock = inventoryData?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    if (quantity > availableStock) {
+      toast.error(`Only ${availableStock} units available for ${selectedProduct.name}`);
+      return;
+    }
+
+    setOrderItems([...orderItems, {
+      product_id: selectedProduct.id,
+      quantity: quantity,
+      unit_price: selectedProduct.unit_price
+    }]);
+    setSelectedProduct(null);
+    setQuantity(1);
   };
 
   return (

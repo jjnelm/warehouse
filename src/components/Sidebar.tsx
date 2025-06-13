@@ -13,7 +13,8 @@ import {
   Store,
   MapPin,
   Truck,
-  QrCode
+  QrCode,
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -30,6 +31,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Inventory', href: '/inventory', icon: Box },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },
+    { name: 'Pick Lists', href: '/pick-lists', icon: ClipboardList },
     { name: 'Shipments', href: '/shipments', icon: Truck },
     { name: 'Products', href: '/products', icon: PackageOpen },
     { name: 'Customers', href: '/customers', icon: Users },

@@ -88,9 +88,12 @@ BEGIN
       WHERE id = NEW.customer_id;
     -- Reduce balance when order is cancelled
     ELSIF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
-      UPDATE customers
-      SET current_balance = current_balance - NEW.total_amount
-      WHERE id = NEW.customer_id;
+      -- Only reduce balance if the order was previously shipped
+      IF OLD.shipping_status = 'in_transit' THEN
+        UPDATE customers
+        SET current_balance = current_balance - NEW.total_amount
+        WHERE id = NEW.customer_id;
+      END IF;
     END IF;
   END IF;
   RETURN NEW;

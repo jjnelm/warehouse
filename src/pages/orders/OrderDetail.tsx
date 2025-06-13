@@ -66,6 +66,69 @@ export default function OrderDetail() {
 
     try {
       setUpdating(true);
+
+      // If cancelling an outbound order, return stock to inventory
+      if (status === 'cancelled' && order.order_type === 'outbound' && order.items) {
+        for (const item of order.items) {
+          // Get the first available location for this product
+          const { data: locationData, error: locationError } = await supabase
+            .from('warehouse_locations')
+            .select('id')
+            .limit(1)
+            .single();
+
+          if (locationError) {
+            console.error('Error finding location:', locationError);
+            continue;
+          }
+
+          // Check if inventory already exists for this product and location
+          const { data: existingInventory, error: inventoryError } = await supabase
+            .from('inventory')
+            .select('id, quantity')
+            .eq('product_id', item.product_id)
+            .eq('location_id', locationData.id)
+            .single();
+
+          if (inventoryError && inventoryError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Error checking existing inventory:', inventoryError);
+            continue;
+          }
+
+          if (existingInventory) {
+            // Update existing inventory
+            const { error: updateError } = await supabase
+              .from('inventory')
+              .update({ 
+                quantity: existingInventory.quantity + item.quantity,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingInventory.id);
+
+            if (updateError) {
+              console.error('Error updating inventory:', updateError);
+              continue;
+            }
+          } else {
+            // Create new inventory record
+            const { error: insertError } = await supabase
+              .from('inventory')
+              .insert({
+                product_id: item.product_id,
+                location_id: locationData.id,
+                quantity: item.quantity,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (insertError) {
+              console.error('Error creating inventory:', insertError);
+              continue;
+            }
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('orders')
         .update({ status })

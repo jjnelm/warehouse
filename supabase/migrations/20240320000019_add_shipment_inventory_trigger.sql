@@ -2,10 +2,7 @@
 CREATE OR REPLACE FUNCTION update_inventory_on_shipment_completion()
 RETURNS TRIGGER AS $$
 DECLARE
-  order_item RECORD;
-  total_available_stock INTEGER;
-  remaining_quantity INTEGER;
-  inventory_record RECORD;
+  pick_list_item RECORD;
 BEGIN
   -- Log the trigger execution
   RAISE NOTICE 'Trigger fired for order %: type=%, old_status=%, new_status=%', 
@@ -20,57 +17,21 @@ BEGIN
       WHERE id = NEW.customer_id;
     END IF;
 
-    -- Loop through all items in the order
-    FOR order_item IN 
-      SELECT product_id, quantity 
-      FROM order_items 
-      WHERE order_id = NEW.id
+    -- Get the pick list for this order
+    FOR pick_list_item IN 
+      SELECT pli.*, pl.id as pick_list_id
+      FROM pick_list_items pli
+      JOIN pick_lists pl ON pl.id = pli.pick_list_id
+      WHERE pl.order_id = NEW.id
+      AND pli.status = 'completed'
     LOOP
-      RAISE NOTICE 'Processing item: product_id=%, quantity=%', 
-        order_item.product_id, order_item.quantity;
+      -- Deduct inventory from the specific location
+      UPDATE inventory
+      SET quantity = quantity - pick_list_item.quantity
+      WHERE id = pick_list_item.inventory_id;
 
-      -- Get total available stock across all locations
-      SELECT COALESCE(SUM(quantity), 0) INTO total_available_stock
-      FROM inventory 
-      WHERE product_id = order_item.product_id;
-
-      IF total_available_stock = 0 THEN
-        RAISE EXCEPTION 'No inventory found for product %', order_item.product_id;
-      END IF;
-
-      -- Check if we have enough total stock
-      IF total_available_stock < order_item.quantity THEN
-        RAISE EXCEPTION 'Insufficient stock for product %. Available: %, Required: %', 
-          order_item.product_id, total_available_stock, order_item.quantity;
-      END IF;
-
-      -- Deduct from inventory locations, starting with the one with highest quantity
-      remaining_quantity := order_item.quantity;
-      
-      FOR inventory_record IN 
-        SELECT id, quantity 
-        FROM inventory 
-        WHERE product_id = order_item.product_id 
-        ORDER BY quantity DESC
-      LOOP
-        IF remaining_quantity <= 0 THEN
-          EXIT;
-        END IF;
-
-        IF inventory_record.quantity >= remaining_quantity THEN
-          -- This location has enough stock
-          UPDATE inventory
-          SET quantity = quantity - remaining_quantity
-          WHERE id = inventory_record.id;
-          remaining_quantity := 0;
-        ELSE
-          -- Use all stock from this location
-          UPDATE inventory
-          SET quantity = 0
-          WHERE id = inventory_record.id;
-          remaining_quantity := remaining_quantity - inventory_record.quantity;
-        END IF;
-      END LOOP;
+      RAISE NOTICE 'Deducted % units from inventory % at location %', 
+        pick_list_item.quantity, pick_list_item.inventory_id, pick_list_item.location_id;
     END LOOP;
   ELSE
     RAISE NOTICE 'Skipping inventory update: order_type=%, old_status=%, new_status=%', 
